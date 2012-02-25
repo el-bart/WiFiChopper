@@ -1,0 +1,5 @@
+http://wiki.openwrt.org/toh/tp-link/tl-wr703n
+https://groups.google.com/forum/?_escaped_fragment_=msg/village-telco-dev/UlGxUTlj9mM/nOMZKmoJmNUJ#!msg/village-telco-dev/UlGxUTlj9mM/nOMZKmoJmNUJ
+http://wiki.villagetelco.org/index.php?title=Building_a_Serial_Port_for_TL-WR703N
+http://embeddedtimes.blogspot.com/2011/09/tp-link-tl-wr703n-tiny-linux-capable.html
+https://forum.openwrt.org/viewtopic.php?pid=150421
