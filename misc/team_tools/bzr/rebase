@@ -1,0 +1,213 @@
+#!/bin/bash
+#
+# rebase tool
+#
+# script for making life easier when working with branches
+# hierarchy. automaticaly downloads and merges changes to
+# current branch from its direct parrent (speicifed via
+# config file). when merge is done, its automaticaly
+# commited. otherwise rollback is performed.
+#
+
+SCRIPT_NAME="`basename "$0"`"
+
+function has_changes
+{
+  bzr status --short 2>&1 | grep -q -v '^?'
+}
+
+# sanity check
+if [ "`bzr root`" != "`readlink -f .`" ]
+then
+  echo "$SCRIPT_NAME: this script must be run from branch's root directory (`bzr root`)" >&2
+  exit 1
+fi
+
+# check for required tools
+type dialog > /dev/null || exit $?
+type kdiff3 > /dev/null || exit $?
+
+bzr update > /dev/null 2>&1 || exit $?
+
+# cannot proceed when pending changes are present
+if has_changes
+then
+  echo "$SCRIPT_NAME: error: pending changes have been found" >&2
+  exit 2
+fi
+
+# read configuration
+. ./bzr_team.conf || exit $?
+
+# helper funciton outputting merges
+function list_merges
+{
+  bzr conflicts | \
+    awk '\
+/^Conflict adding file / { print $4           } ; \
+/^Contents conflict /    { printf("%s.\n",$4) } ; \
+/^Text conflict in /     { printf("%s.\n",$4) } ; \
+' | \
+    sed 's:\.$::'
+}
+
+# helper function performing merges, where one element is to be chosen only
+function merge_element
+{
+  local f="$1"
+  ANSWER="` dialog --stdout --menu "directory element requires merging (run diff to compare)" \
+               11  58  3 \
+               OTHER "($f)" \
+               THIS  "($f.moved)" \
+               diff  "(run default differ on both elements)" \
+          `"
+  case "$ANSWER"
+  in
+    "OTHER")
+      bzr rm --force "$f.moved" || return $?
+    ;;
+    "THIS")
+      bzr rm --force "$f"    || return $?
+      bzr mv "$f.moved" "$f" || return $?
+    ;;
+    "diff")
+      $DDIFF "$f" "$f.moved"
+      merge_element "$f"
+      return $?
+    ;;
+    *)
+      # operation canceled...
+      echo "$SCRIPT_NAME: merge of '$f' canceled by user" >&2
+      return 10
+    ;;
+  esac
+}
+
+# helper function performing merges, where local element is removed, but remote has changed
+function merge_local_removed_remote_changed
+{
+  local other="$1"
+  local base="$2"
+  local out="$3"
+  ANSWER="` dialog --stdout --menu "merging changes on removed element (run diff to compare)" \
+               11  58  3 \
+               OTHER "($other)" \
+               THIS  "(-)" \
+               diff  "(run default differ on both elements)" \
+          `"
+  case "$ANSWER"
+  in
+    "OTHER")
+      bzr mv "$other" "$out" || return $?
+    ;;
+    "THIS")
+      bzr rm --force "$other" || return $?
+    ;;
+    "diff")
+      $DDIFF "$other" "$base"
+      merge_local_removed_remote_changed "$other" "$base" "$out"
+      return $?
+    ;;
+    *)
+      # operation canceled...
+      echo "$SCRIPT_NAME: merge with removed element '$out' canceled by user" >&2
+      return 10
+    ;;
+  esac
+}
+
+# helper function performing merges, where local element is changed, but remote has been removed
+function merge_local_changed_remote_removed
+{
+  local this="$1"
+  local base="$2"
+  local out="$3"
+  ANSWER="` dialog --stdout --menu "merging changes on removed element (run diff to compare)" \
+               11  58  3 \
+               OTHER "(-)" \
+               THIS  "($this)" \
+               diff  "(run default differ on both elements)" \
+          `"
+  case "$ANSWER"
+  in
+    "OTHER")
+      bzr rm --force "$this" || return $?
+    ;;
+    "THIS")
+      bzr mv "$this" "$out" || return $?
+    ;;
+    "diff")
+      $DDIFF "$this" "$base"
+      merge_local_changed_remote_removed "$this" "$base" "$out"
+      return $?
+    ;;
+    *)
+      # operation canceled...
+      echo "$SCRIPT_NAME: merge with removed element '$f' canceled by user" >&2
+      return 10
+    ;;
+  esac
+}
+
+
+# prepare encironment - adds our diff3 wrapper to path
+THIS_PATH="`readlink -f "$0"`"
+TT_ROOT="`dirname "$THIS_PATH"`"
+MT_ROOT="$TT_ROOT/../merge_tools"
+#export PATH="$TT_ROOT:$PATH"
+DDIFF="$MT_ROOT/default_diff"
+DMERGE="$MT_ROOT/default_merge"
+
+# do all necessair merges
+if ! bzr merge --pull "$PARENT"
+then
+  # in case textual merges were not enought, include some more merge cases
+  (
+    list_merges | \
+      while read f
+      do
+        echo "$SCRIPT_NAME: non-trivial merge on '$f' (`list_merges | wc -l` merge(s) left)"
+        if [ -f "$f.THIS" ] && [ -f "$f.BASE" ] && [ -f "$f.OTHER" ]
+        then
+          # regular merge, when conflicting changes are present on 2 branches
+          $DMERGE "$f" "$f.OTHER" "$f.THIS" "$f.BASE" || exit $?
+        elif [ -e "$f.BASE" ] && [ -e "$f.OTHER" ]
+          then
+            # local element is removed, but remote has changed since last rebase
+            merge_local_removed_remote_changed "$f.OTHER" "$f.BASE" "$f" || exit $?
+          elif [ -e "$f.BASE" ] && [ -e "$f.THIS" ]
+            then
+              # local element is changed, but remote has been removed
+              merge_local_changed_remote_removed "$f.THIS" "$f.BASE" "$f" || exit $?
+            elif [ -e "$f" ] && [ -e "$f.moved" ]
+              then
+                # two different files on two different branches, but sharing the same name
+                merge_element "$f" || exit $?
+              else
+                echo "$SCRIPT_NAME: error encountered - no handle conflict on '$f'" >&2
+                exit 200
+              fi
+        bzr resolve "$f" || exit $?
+      done
+  )
+fi
+RET=$?
+
+# report error condition if needed
+if [ "$RET" -ne 0 ]
+then
+  echo "$SCRIPT_NAME: error encured - if needed use 'bzr revert' to rollback changes" >&2
+  echo "$SCRIPT_NAME: error encured - and 'bzr ci' when done" >&2
+  exit $RET
+fi
+
+# commit changes if present
+RET=0
+if has_changes
+then
+  echo "$SCRIPT_NAME: rebase successful - commiting changes"
+  bzr ci || RET=$?
+fi
+
+# exit script
+exit $RET

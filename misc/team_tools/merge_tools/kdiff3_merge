@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# $0 <OUT> <OTHER> <THIS> [<BASE>]
+#
+
+OUT="$1"
+OTHER="$2"
+THIS="$3"
+[ $# -eq 4 ] && BASE="-b $4 -L BASE"
+
+exec kdiff3 --auto -m -o "$OUT" $BASE -L OTHER -L THIS -- "$OTHER" "$THIS"

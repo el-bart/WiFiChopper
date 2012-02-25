@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# diff3 wrapper for bzr
+#
+
+FPATH="`readlink -f "$0"`"
+DIR="`dirname "$FPATH"`"
+
+for p in "$@"
+do
+  if grep -qi "this$" <<< "$p"
+  then
+    THIS="$p"
+  elif grep -qi "other$" <<< "$p"
+    then
+      OTHER="$p"
+    elif grep -qi "base$" <<< "$p"
+      then
+        BASE="$p"
+      fi
+done
+
+# create base command
+CMD="$DIR/default_merge $THIS $OTHER $THIS"
+[ -z "$BASE" ] || CMD="$CMD $BASE"
+
+# now call kdiff3 command
+exec $CMD
