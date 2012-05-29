@@ -1,0 +1,4 @@
+Shuang Ma 9110
+
+rear engine:  1.0A @ 8V (with blades installed)
+main engines: 1.5A @ 8V (free run)
