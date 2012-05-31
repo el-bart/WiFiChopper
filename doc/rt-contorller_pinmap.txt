@@ -1,0 +1,16 @@
+# engines
+PB0, PD7 - rear engine left/right
+PB1      - main engine 1
+PB2      - main engine 2
+
+# RS232
+PD0 - RS232 @ 5V / RX
+PD1 - RS232 @ 5V / TX
+
+# accelerometer
+PC0 - OX axis
+PC1 - OY axis
+PC2 - OZ axis
+
+# misc
+PC3 - supply voltage measurement (got VCC/3)
