@@ -43,9 +43,7 @@ void init(void) {
   UCSRC = (1 << URSEL) | (3 << UCSZ0);
 }
 
-// INTERRUPT can be interrupted
-// SIGNAL can't be interrupted
-SIGNAL (SIG_UART_RECV) { // USART RX interrupt
+ISR(USART_RXC_vect) { // USART RX interrupt
   unsigned char c;
   c = UDR;
   usart_putc(c);

@@ -2,9 +2,7 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-//#include <avr/signal.h>   // NOTE: obsolete include commented-out
 #include <inttypes.h>
-//#include <avr/iom16.h>    // NOTE: we use atmega8 instaed of atmega16
 #include <util/delay.h>
 
 //#define UART_BAUD_RATE 9600
@@ -45,7 +43,7 @@ void init(void) {
 
 // INTERRUPT can be interrupted
 // SIGNAL can't be interrupted
-SIGNAL (SIG_UART_RECV) { // USART RX interrupt
+ISR (USART_RXC_vect ) { // USART RX interrupt
   unsigned char c;
   c = UDR;
   usart_putc(c);
