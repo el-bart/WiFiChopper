@@ -1,0 +1,25 @@
+#!/bin/bash
+
+RET=0
+
+MEM_MODE="normal"
+[ "$#" -gt 0 ] && MEM_MODE="$1"
+
+TC="local"
+[ "$#" -gt 1 ] && TC="$2"
+
+# iterata through all build components
+for d in `cat build_config/components{.,_test.}lst | sort | uniq`
+do
+  echo "----------------------------"
+  echo "testing $d:"
+  ( ulimit -c unlimited && cd gen/test_${TC}_${MEM_MODE}_default/$d && LD_LIBRARY_PATH="$LD_LIBRARY_PATH:../libs/" ./$d.t ) || RET=1
+done
+
+echo
+if [ "$RET" -ne "0" ]
+then
+  echo "$0: some of the tests FAILED..."
+fi
+
+exit $RET

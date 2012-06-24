@@ -1,0 +1,2 @@
+#!/bin/sh
+exec pkg-config gtkmm-3.0 --libs

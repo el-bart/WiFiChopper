@@ -1,0 +1,5 @@
+* controlls up to 17 servos.
+* Timer2 (8-bit) - generates interrupt every 0.5ms, to keep 20ms cycle.
+* Timer1 (16-bit) - used for counting when to change position of a given servos.
+* port outputs to use: PB0..PB5, PC0..PC5, PD3..PD7.
+* uC sleeps when not controlling servos, nor communicating via RS232.

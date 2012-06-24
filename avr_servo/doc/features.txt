@@ -1,0 +1,12 @@
+* operating up to 17 servos.
+* persistent declaration of min/max positions servo cannot overcome.
+* persistent declaration of default servos position.
+* RS-232 communication over simple, text-based (i.e. readable) protocol, with hardware flow control.
+* watchdog ensuring self-recovery after a failure.
+* low power consumption.
+* overcurrent fuse protection.
+* less then 1.5 deg precision for typical servos.
+* can go beyond min-max positions of RC mechanisms with longer/shorter impulses.
+* operating at 0.5ms to 2.5ms time period, making it sutable for every RC servo available.
+* RS-232 communication with 38400,8N1 speed/mode with RTS/CTS hardware flow.
+* driver with non-blocking communication.

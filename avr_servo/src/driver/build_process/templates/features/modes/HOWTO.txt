@@ -1,0 +1,12 @@
+mods
+========
+location to specify file names to be compiled during build. create file named
+after build mode (default mode is 'default' - it must always exist) and insert
+lines that specifies files that can be used. notice that it is highly
+recomended to use wildcards here.
+
+features
+========
+in order to create new feature place here file named after given feature(s)
+(ex: 'qsort' and 'bublesort' for different sorting algorithm implementations)
+and place paths to files that are to be compiled the same way as in modes.

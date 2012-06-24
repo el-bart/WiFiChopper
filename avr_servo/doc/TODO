@@ -1,0 +1,12 @@
+* add command queue on the device.
+* add moving with different speeds.
+* add more I/O operations (no computations for the chrono table though!).
+* add "HELLO" command (giving protocol version in the response).
+* add "RESET" command.
+* consider making SMD version of the device.
+* add "SNAME sth" and "RNAME" commands to set and read name of the device, that can be (short) user string, for identifying when multiple devices are connected to the random ports.
+* make USB version (ft232).
+
+consider:
+* add "BURST" command to set all servos to a given poistions.
+* consider adding more precition to controling servos (few extra bits?).
