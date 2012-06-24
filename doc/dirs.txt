@@ -1,0 +1,5 @@
+avr_servo     - servo controller based on AVR uC (external project)
+doc           - project's common documentation
+motherboard   - router adopted to be motherboard of the chopper's flying platform
+pwr-board     - power supply board
+rt-controller - realtime controller board (controlls engine and reads acclerometer
