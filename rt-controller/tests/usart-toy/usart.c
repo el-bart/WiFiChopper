@@ -62,6 +62,7 @@ int main(void) {
     for(c='a'; c<='z'; ++c)
       usart_putc(c);
     usart_putc('\n');
+    delay(1);
   }
 
   return 0;
