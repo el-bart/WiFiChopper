@@ -62,15 +62,18 @@ int main(void) {
     usart_putc('0');
     PORTB=0x00;
     PORTD=0x00;
-    delay(10);
+    delay(2*10);
     // main 1
     usart_putc('1');
-    PORTB=0x02;
-    delay(10);
-    // main 2
-    usart_putc('2');
-    PORTB=0x04;
-    delay(10);
+    PORTB=0x02|0x04;
+    delay(3*10);
+
+    // off
+    usart_putc('0');
+    PORTB=0x00;
+    PORTD=0x00;
+    for(;;);
+
     // rear left
     usart_putc('3');
     PORTB=0x01;
