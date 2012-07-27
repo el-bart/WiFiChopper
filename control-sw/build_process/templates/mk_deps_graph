@@ -1,0 +1,48 @@
+#!/bin/bash
+# generates dependency graph with 'dot'
+
+if [ "$#" -ne "2" ]
+then
+  echo "$0 <profile> <outfile.png>" >&2
+  exit 1
+fi
+
+set -e
+
+PROFILE="$1"
+shift
+PNG="$1"
+shift
+
+# components list
+TMP="build_config/components"
+COMPONENTS="`cat "$TMP.lst"`"
+[ -f "${TMP}_$PROFILE.lst" ] && COMPONENTS="$COMPONENTS `cat "${TMP}_$PROFILE.lst"`"
+
+# prepare script file
+LOG="`mktemp`"
+echo "saving generated script as '$LOG'"
+
+# source code generation
+{
+echo "digraph dependencies {"
+
+# add dependencies for each component
+for c in $COMPONENTS
+do
+  TMP="$c/features/deps"
+  DEPS=""
+  [ -f "$TMP/common"   ] && DEPS="`cat "$TMP/common"`"
+  [ -f "$TMP/$PROFILE" ] && DEPS="$DEPS `cat "$TMP/$PROFILE"`"
+  for d in $DEPS
+  do
+    echo "$c -> $d"
+  done
+done
+
+echo "}"
+} | tee "$LOG" | dot -o "$PNG" -T png
+
+echo "image saved as '$PNG'"
+
+exit 0

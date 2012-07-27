@@ -1,0 +1,9 @@
+CC:=avr-gcc
+CXX:=avr-g++
+AR:=avr-ar
+RANLIB:=avr-ranlib
+NM:=avr-nm
+#LD:=avr-ld
+LD:=$(CXX)
+STRIP:=avr-strip
+DOXYGEN:=doxygen

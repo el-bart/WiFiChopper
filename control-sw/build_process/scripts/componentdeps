@@ -1,0 +1,44 @@
+#!/bin/bash
+
+THIS_DIR="`dirname $0`"
+BN="`basename $0`"
+if [ $# -lt 5 ]
+then
+  echo "$BN <prj_root_path> <out_gen_path> <deps_path> <gen_libs_path> <c1> <c2> ..." >&2
+  echo "(note: $BN must be run from project root)" >&2
+  exit 1
+fi
+
+# save project root
+PRJ_ROOT_DIR="$1"
+shift
+# remember output dir
+OUTPUT_DIR="$1"
+shift
+DEPS_PATH="$1"
+shift
+GEN_LIBS_PATH="$1"
+shift
+
+PIDS=""
+# go throught all files
+for c in $*
+do
+  out="$OUTPUT_DIR/$c.mk"
+  test -f "$out" && continue # skip if already exists
+  "$THIS_DIR/getdeps" "$OUTPUT_DIR" "$DEPS_PATH" "$GEN_LIBS_PATH" "$c" & #|| exit $?
+  PIDS="$PIDS $!"
+done
+# wait for all processes to finish
+wait $PIDS
+
+# make default target
+cat<<EOF > "$OUTPUT_DIR/_default_target_.mk"
+.PHONY: all
+all:: $*
+
+$*:: pre_build
+EOF
+
+exit 0
+

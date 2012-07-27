@@ -1,0 +1,9 @@
+CC:=gcc
+CXX:=g++
+AR:=ar
+RANLIB:=ranlib
+NM:=nm
+#LD:=ld
+LD:=$(CXX)
+STRIP:=strip
+DOXYGEN:=doxygen

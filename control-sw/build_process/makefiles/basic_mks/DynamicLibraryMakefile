@@ -1,0 +1,9 @@
+LIBRARY_NAME=lib$(COMPONENT_NAME).so
+export LIBRARY_NAME
+LIBRARY_TYPE=dynamic
+export LIBRARY_TYPE
+COMPONENT_TYPE=library
+export COMPONENT_TYPE
+
+include $(MAKEFILES_COMMON_BASE_DIR)/component_template.mk
+
