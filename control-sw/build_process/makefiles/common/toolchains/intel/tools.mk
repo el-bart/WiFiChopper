@@ -1,9 +1,0 @@
-CC:=icc
-CXX:=icc
-AR:=xiar
-RANLIB:=ranlib
-NM:=nm
-#LD:=xild
-LD:=$(CXX)
-STRIP:=strip
-DOXYGEN:=doxygen
