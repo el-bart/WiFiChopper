@@ -71,7 +71,7 @@ uint8_t Tokenizer::tokenize()
         ++count;
     }
 
-    // procced to the next character
+    // proceed to the next character
     ++s;
   }
 

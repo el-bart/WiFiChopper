@@ -14,7 +14,7 @@ namespace
 {
 void debug_send_char(uint8_t c)
 {
-  // wait for transmition to be over
+  // wait for transmission to be over
   while( !(UCSRA & (1<<UDRE)) );
   // send char
   UDR=c;
@@ -37,7 +37,7 @@ void uassertInternalImplementation(uint16_t line, const char *file)
 {
   cli();    // disable interrupts
 
-  // loop forever sending asseration details and blinking the led
+  // loop forever sending assertion details and blinking the led
   while(1)
   {
     //
@@ -45,7 +45,7 @@ void uassertInternalImplementation(uint16_t line, const char *file)
     //
 
     // send begin string:
-    for(const char *tmp="asseration failed @ "; *tmp!=0; ++tmp)
+    for(const char *tmp="assertion failed @ "; *tmp!=0; ++tmp)
       debug_send_char(*tmp);
     // send file name
     for(const char *tmp=file; *tmp!=0; ++tmp)

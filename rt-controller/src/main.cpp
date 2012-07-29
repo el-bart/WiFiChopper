@@ -22,17 +22,14 @@ int main(void)
   Input           input;        // input data collect-and-response facility
   wdg.reset();
 
-
   // main loop (never ending)
   while(true)
   {
     wdg.reset();            // watchdog reset
     adc.step();             // ADC processing step
     input.step(adc);        // process input data
-
-    // TODO...
   }
 
-
+  // this code is never reached
   return 0;
 } // main()

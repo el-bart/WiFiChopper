@@ -8,7 +8,7 @@
 class Watchdog
 {
 public:
-  /** \brief initialies watchdog timer.
+  /** \brief initializes watchdog timer.
    *  \note watchdog starts in disabled mode.
    */
   Watchdog(void);

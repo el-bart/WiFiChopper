@@ -26,7 +26,7 @@ inline void sendDataImpl(const char c)
 
 void USART::init(void)
 {
-  // clock devider register (computed from baud rate and oscilator frequency)
+  // clock divider register (computed from baud rate and oscillator frequency)
   UBRRH=(uint8_t)( (USART_UBRR(USART_BAUD, F_CPU)>>8) & 0x00FF );
   UBRRL=(uint8_t)( (USART_UBRR(USART_BAUD, F_CPU)>>0) & 0x00FF );
 

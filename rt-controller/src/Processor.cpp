@@ -10,7 +10,7 @@ namespace
 {
 // some commonly used flash strings are here:
 const char g_tooManyArgsStr[]  PROGMEM = "too many args";
-const char g_missingArgsStr[]  PROGMEM = "missing argument(s)";
+const char g_missingArgsStr[]  PROGMEM = "missing arg(s)";
 const char g_invalidHexValue[] PROGMEM = "invalid hex value";
 
 
@@ -176,7 +176,7 @@ void Processor::handleAccel(Tokenizer& tokenizer, const AdcReadsWrapper::Reads &
     errorFlash(g_tooManyArgsStr);
     return;
   }
-  // send reading from each axies
+  // send reading from each axis
   sendAsHex(reads.ox_);
   USART::send(' ');
   sendAsHex(reads.oy_);

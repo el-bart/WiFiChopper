@@ -1,8 +1,7 @@
 #include "config.hpp"       // this file must be included as first one!
 
-#include "USART.hpp"
 #include "Input.hpp"
-#include "AdcReadsWrapper.hpp"
+#include "USART.hpp"
 #include "utils.hpp"
 
 
@@ -26,7 +25,7 @@ void Input::step(const AdcReadsWrapper& adc)
   // process new char
   if(c=='\n' || c=='\r')
   {
-    // if command was alrady applied, just skip next new lines
+    // if command was already applied, just skip next new lines
     if(applied_)
       return;
     // end of line means processing is applied
