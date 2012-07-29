@@ -4,6 +4,7 @@
 #include "USART.hpp"
 #include "Watchdog.hpp"
 #include "AdcReadsWrapper.hpp"
+#include "Input.hpp"
 
 
 //
@@ -11,22 +12,27 @@
 //
 int main(void)
 {
-  Watchdog        wdg;      // prepare watchdog for work (keep this object as the first one to init!)
-  wdg.enable();             // enable watchdog
-  AdcReadsWrapper adcw;     // A/D converter with wrapped reads
+  Watchdog        wdg;          // prepare watchdog for work (keep this object as the first one to init!)
+  wdg.enable();                 // enable watchdog
   wdg.reset();
-  USART::init();            // configure serial interface
+  AdcReadsWrapper adc;          // A/D converter with wrapped reads
+  wdg.reset();
+  USART::init();                // configure serial interface
+  wdg.reset();
+  Input           input;        // input data collect-and-response facility
   wdg.reset();
 
-  // main loop - never ends
+
+  // main loop (never ending)
   while(true)
   {
     wdg.reset();            // watchdog reset
-    adcw.step();            // ADC processing step
+    adc.step();             // ADC processing step
+    input.step(adc);        // process input data
 
     // TODO...
   }
 
+
   return 0;
 } // main()
-
