@@ -195,9 +195,20 @@ void Processor::handleEng(Tokenizer& tokenizer)
     return;
   }
 
-  // read engines speeds
-  // TODO: read and send back
-  errorFlash( PSTR("not yet implemented") );
+  // read engines speeds and send back to the host
+
+  // main engine 1
+  sendAsHex( eng_.getMain1() );
+  USART::send(' ');
+  // main engine 2
+  sendAsHex( eng_.getMain2() );
+  USART::send(' ');
+  // rear engine
+  const EngSpeed::RearEng rear=eng_.getRear();
+  USART::send( rear.forward_?'+':'-' );
+  sendAsHex(rear.value_);
+  // eol
+  USART::send('\n');
 }
 
 
@@ -261,8 +272,10 @@ void Processor::handleEngSet(Tokenizer& tokenizer)
     return;
   }
 
-  // setting engines values
-  // TODO: set speed here: main1, main2, rearForward/rearValue
+  // setting new engines values
+  eng_.setMain1(main1);
+  eng_.setMain2(main2);
+  eng_.setRear( EngSpeed::RearEng{rearForward, rearValue} );
 
   // sending response
   sendAsHex(main1);
