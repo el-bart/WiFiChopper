@@ -16,7 +16,4 @@
 //#define USART_BAUD (19200L)
 #define USART_BAUD (38400L)
 
-// max queue size
-#define QUEUE_MAX_SIZE 8
-
 #endif
