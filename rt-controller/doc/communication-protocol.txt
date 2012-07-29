@@ -73,3 +73,10 @@ response:
 A
 where A is hex value read from the ADC. to compute the actual voltage use the following equation:
 Vin=(3*A*5)/1024
+
+
+error response
+--------------
+in case of error following response is returned:
+ERROR: M
+where M is a string message informing what happened. note that M can be empty.
