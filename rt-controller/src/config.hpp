@@ -5,15 +5,18 @@
 #ifndef INCLUDE_CONFIG_HPP_FILE
 #define INCLUDE_CONFIG_HPP_FILE
 
-// units commonly used
-#define KHz   1000L
-#define MHz   (1000L*KHz)
+// quarc frequency in [Hz] (note: this must be define...)
+#define F_CPU (8L*1000L*1000L)
 
-// quarc frequency in [Hz]
-#define F_CPU (8L*MHz)
+// now system files can be safely included
+#include <inttypes.h>
+
 
 // USART speed (bps)
-//#define USART_BAUD (19200L)
-#define USART_BAUD (38400L)
+//constexpr uint16_t USART_BAUD=19200L;
+constexpr uint16_t USART_BAUD=38400L;
+
+// version number: main, major, minor
+constexpr uint8_t VERSION[3]={0,0,0};
 
 #endif
