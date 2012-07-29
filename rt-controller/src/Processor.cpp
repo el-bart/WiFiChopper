@@ -4,6 +4,7 @@
 
 #include "Processor.hpp"
 #include "USART.hpp"
+#include "utils.hpp"
 
 namespace
 {
@@ -13,10 +14,7 @@ const char g_missingArgsStr[]  PROGMEM = "missing argument(s)";
 const char g_invalidHexValue[] PROGMEM = "invalid hex value";
 
 
-template<typename T, uint8_t N>
-constexpr uint8_t tabSize(const T(&)[N]) { return N; }
-
-
+// converts char to value, as hex
 bool char2hex(uint8_t &h, const char c)
 {
   if('0'<=c && c<='9')
@@ -32,6 +30,8 @@ bool char2hex(uint8_t &h, const char c)
   return false;
 }
 
+
+// parses given string as a hex value
 bool parseAsHex(uint8_t &out, const char *str)
 {
   // sanity check
@@ -54,6 +54,7 @@ bool parseAsHex(uint8_t &out, const char *str)
 }
 
 
+// sends given number as hex value
 void sendAsHex(const uint8_t n)
 {
   const uint8_t bytes[2] = { static_cast<uint8_t>(n>>4), static_cast<uint8_t>(n&0x0F) };

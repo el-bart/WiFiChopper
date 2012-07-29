@@ -1,3 +1,6 @@
+#ifndef INCLUDE_ADCREADSWRAPPER_HPP_FILE
+#define INCLUDE_ADCREADSWRAPPER_HPP_FILE
+
 #include "config.hpp"
 
 #include "AdcReader.hpp"
@@ -41,3 +44,5 @@ private:
   Reads     now_;
   Reads     last_;
 }; // AdcReadsWrapper
+
+#endif

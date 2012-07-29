@@ -1,7 +1,3 @@
-/*
- * uassert.hpp
- *
- */
 #ifndef INCLUDE_UASSERT_HPP_FILE
 #define INCLUDE_UASSERT_HPP_FILE
 

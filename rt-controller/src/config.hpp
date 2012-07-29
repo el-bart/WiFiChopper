@@ -1,7 +1,3 @@
-/*
- * config.hpp
- *
- */
 #ifndef INCLUDE_CONFIG_HPP_FILE
 #define INCLUDE_CONFIG_HPP_FILE
 
@@ -22,5 +18,8 @@ constexpr uint8_t VERSION[3]={0,0,0};
 static_assert( VERSION[0]<10, "number too big" );
 static_assert( VERSION[1]<10, "number too big" );
 static_assert( VERSION[2]<10, "number too big" );
+
+// input text buffer length
+constexpr uint8_t INPUT_BUF_SIZE=16;
 
 #endif

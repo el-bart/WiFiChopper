@@ -1,7 +1,3 @@
-/*
- * USART.hpp
- *
- */
 #ifndef INCLUDE_USART_HPP_FILE
 #define INCLUDE_USART_HPP_FILE
 
