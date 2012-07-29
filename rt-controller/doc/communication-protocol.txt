@@ -60,3 +60,16 @@ rear engine, respectively. for example:
 engset A0 AA -42
 means to set main engine 1 power to 160 (0xA0), main engine 2 to 170 (0xAA) and rear engine
 to 66 (0x42), to backward thrust (-).
+response:
+setABCD
+where meaning of A, B, C and D is the same as in the request.
+
+
+battery voltage
+---------------
+command:
+vin?
+response:
+A
+where A is hex value read from the ADC. to compute the actual voltage use the following equation:
+Vin=(3*A*5)/1024
