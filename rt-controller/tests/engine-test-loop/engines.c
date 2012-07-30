@@ -53,7 +53,7 @@ int main(void) {
   init(); // init USART
   sei();  // enable interrupts
 
-  DDRB |= (1<<PB2) | (1<<PB1) | (1<<PB0);
+  DDRB |= (1<<PB3) | (1<<PB2) | (1<<PB1) | (1<<PB0);
   DDRD |= (1<<PD7);
 
   while(1)
@@ -73,12 +73,12 @@ int main(void) {
     delay(10);
     // rear left
     usart_putc('3');
-    PORTB=0x01;
+    PORTB=0x01|0x08;
     PORTD=0x00;
     delay(10);
     // rear right
     usart_putc('4');
-    PORTB=0x00;
+    PORTB=0x00|0x08;
     PORTD=0x80;
     delay(10);
     // eol
