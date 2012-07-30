@@ -160,9 +160,9 @@ void Processor::handleHello(Tokenizer& tokenizer)
   USART::sendFlash( PSTR("WiFiChooper RT-board v") );
   // send version numbers
   USART::send('0'+VERSION[0]);
-  USART::send(' ');
+  USART::send('.');
   USART::send('0'+VERSION[1]);
-  USART::send(' ');
+  USART::send('.');
   USART::send('0'+VERSION[2]);
   USART::send('\n');
 }
