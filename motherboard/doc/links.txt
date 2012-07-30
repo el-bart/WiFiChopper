@@ -1,0 +1,1 @@
+http://wiki.openwrt.org/doc/howto/buildroot.exigence
