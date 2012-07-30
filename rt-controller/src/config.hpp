@@ -20,6 +20,6 @@ static_assert( VERSION[1]<10, "number too big" );
 static_assert( VERSION[2]<10, "number too big" );
 
 // input text buffer length
-constexpr uint8_t INPUT_BUF_SIZE=16;
+constexpr uint8_t INPUT_BUF_SIZE=24;
 
 #endif
