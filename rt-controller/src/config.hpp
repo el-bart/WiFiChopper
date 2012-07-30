@@ -13,7 +13,7 @@
 constexpr uint16_t USART_BAUD=38400L;
 
 // version number: main, major, minor
-constexpr uint8_t VERSION[3]={0,0,0};
+constexpr uint8_t VERSION[3]={1,0,0};
 // sanity checks:
 static_assert( VERSION[0]<10, "number too big" );
 static_assert( VERSION[1]<10, "number too big" );
