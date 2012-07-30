@@ -6,9 +6,15 @@
 
 EngSpeed::EngSpeed(void)
 {
-  // configure rear engine
+  // rear engine enable as PWM / OC2
   setRear( RearEng{true,0} );       // stop rear engine
-  // TODO...
+  DDRB  |= _BV(PB3) | _BV(PB0);     // configure output pins of port B
+  DDRD  |= _BV(PD7);                // configure output pin of port D
+  TCCR2 |= _BV(WGM21) | _BV(WGM20); // fast PWM mode, TOP=0xFF
+  TCCR2 |= _BV(COM21);              // non-inverting PWM on OC2, clear on cmp-match, set on BOTTOM
+  // NOTE: follwing settings gives 8MHz/(256*256)~=122Hz frequesncy, with variable fill-out.
+  static_assert( F_CPU==8L*1000L*1000L, "CPU frequency has been changed, thus prescaler needs to be re-calbibrated" );
+  TCCR2 |= _BV(CS22) | _BV(CS21);   // set preskaler to 256
 
   // main engine 1 enable as PWM / OC1A
   setMain1(0);                      // stop engine at the begining
@@ -74,10 +80,31 @@ void EngSpeed::setMain2(const uint8_t v)
 
 EngSpeed::RearEng EngSpeed::getRear(void) const
 {
-  // TODO
+  const RearEng out = { (PORTB & _BV(PB0))?true:false, OCR2 };
+  return out;
 }
 
 void EngSpeed::setRear(const RearEng e)
 {
-  // TODO
+  // set speed
+  OCR2 = e.value_;
+  // if speed is zero, disable both outputs
+  if(e.value_==0)
+  {
+    PORTB &= ~_BV(PB0);
+    PORTD &= ~_BV(PD7);
+    return;
+  }
+
+  // set direction
+  if(e.forward_)
+  {
+    PORTB |=  _BV(PB0);
+    PORTD &= ~_BV(PD7);
+  }
+  else
+  {
+    PORTB &= ~_BV(PB0);
+    PORTD |=  _BV(PD7);
+  }
 }
