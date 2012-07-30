@@ -10,7 +10,8 @@ AdcReader::AdcReader(void)
   // initialize
   ADMUX  = _BV(ADLAR);
   // ADMUX / MUX3..MUX0
-  ADCSRA = _BV(ADEN) | _BV(ADSC) | _BV(ADPS1) | _BV(ADPS0);
+  ADCSRA = _BV(ADEN) | _BV(ADSC) | _BV(ADPS2) | _BV(ADPS1); // enable, start covnersion, set prescaler to 64 (i.e. 125ksps)
+  static_assert( F_CPU==8L*1000L*1000L, "CPU frequency has been changed, thus prescaler needs to be re-calbibrated" );
   // skip first results
   getRead();
 }
