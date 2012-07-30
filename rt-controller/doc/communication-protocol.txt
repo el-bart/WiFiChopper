@@ -29,7 +29,7 @@ where:
 X,Y,Z are readings of OX, OY and OZ axises respectively. values are expressed in one byte,
 hex form. for example:
 01 FF A6
-means OX=1, OY=255, OZ=166. acceleration of 1G is equivalent to about 160. since board is
+means OX=1, OY=255, OZ=166. acceleration of 1g is equivalent to about 90. since board is
 usually not mounted exactly, it is crucial to calibrate reads, using flat surface as a
 reference point.
 
@@ -72,7 +72,7 @@ vin?
 response:
 A
 where A is hex value read from the ADC. to compute the actual voltage use the following equation:
-Vin=(3*A*5)/1024
+Vin=(3*A*4*5)/1024
 
 
 error response
