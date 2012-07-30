@@ -5,10 +5,10 @@
 AdcReader::AdcReader(void)
 {
   // setup pins as analog inputs (i.e. tri-state)
-  DDRC  &= ~( _BV(PC3) | _BV(PC2) | _BV(PC1) | _BV(PC0) ); // input
-  PORTC &= ~( _BV(PC3) | _BV(PC2) | _BV(PC1) | _BV(PC0) ); // disable pull-ups
+  DDRC  &= ~( _BV(PC3) | _BV(PC2) | _BV(PC1) | _BV(PC0) );  // input
+  PORTC &= ~( _BV(PC3) | _BV(PC2) | _BV(PC1) | _BV(PC0) );  // disable pull-ups
   // initialize
-  ADMUX  = _BV(ADLAR);
+  ADMUX  = _BV(ADLAR);                                      // left-adjusted result
   // ADMUX / MUX3..MUX0
   ADCSRA = _BV(ADEN) | _BV(ADSC) | _BV(ADPS2) | _BV(ADPS1); // enable, start covnersion, set prescaler to 64 (i.e. 125kHz ADC clock)
   static_assert( F_CPU==8L*1000L*1000L, "CPU frequency has been changed, thus prescaler needs to be re-calbibrated" );
