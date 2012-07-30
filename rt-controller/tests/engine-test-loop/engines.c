@@ -11,27 +11,32 @@
 #define UART_BAUD_RATE 38400
 #define UART_BAUD_CALC(UART_BAUD_RATE,F_CPU) ((F_CPU)/((UART_BAUD_RATE)*16l)-1)
 
-void delay(const uint8_t ds) {
+void delay(const uint8_t ds)
+{
   uint8_t i;
   for(i=0; i<ds; ++i)
     _delay_ms(100);
 }
 
-void usart_putc(unsigned char c) {
+void usart_putc(unsigned char c)
+{
   // wait until UDR ready
   while(!(UCSRA & (1 << UDRE)));
   UDR = c;    // send character
 }
 
-void uart_puts (char *s) {
+void uart_puts (char *s)
+{
   //  loop until *s != NULL
-  while (*s) {
+  while (*s)
+  {
     usart_putc(*s);
     s++;
   }
 }
 
-void init(void) {
+void init(void)
+{
   // set baud rate
   UBRRH = (uint8_t)(UART_BAUD_CALC(UART_BAUD_RATE,F_CPU)>>8);
   UBRRL = (uint8_t)UART_BAUD_CALC(UART_BAUD_RATE,F_CPU);
@@ -43,13 +48,17 @@ void init(void) {
   UCSRC = (1 << URSEL) | (3 << UCSZ0);
 }
 
-ISR(USART_RXC_vect) { // USART RX interrupt
+// USART RX interrupt
+ISR(USART_RXC_vect)
+{
   unsigned char c;
   c = UDR;
   usart_putc(c);
 }
 
-int main(void) {
+
+int main(void)
+{
   init(); // init USART
   sei();  // enable interrupts
 
