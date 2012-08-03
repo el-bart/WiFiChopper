@@ -4,4 +4,4 @@ motherboard: running
 in order to run scripts one must install following packages:
   - python
   - python-crypto
-  - python-cjson
+  - pyserial
