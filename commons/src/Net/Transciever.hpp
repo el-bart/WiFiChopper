@@ -4,6 +4,7 @@
 #include <cinttypes>
 
 #include "Util/UniqueDescriptor.hpp"
+#include "Net/Exceptionh.hpp"
 
 
 namespace Net
