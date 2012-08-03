@@ -9,8 +9,8 @@ import sys
 protocolVersion=1
 softwareVersion=[0,0,0]
 
-if len(sys.argv) != 1+3:
-    print(sys.argv[0] + " <host> <port> <keyFile>")
+if len(sys.argv) != 1+4:
+    print(sys.argv[0] + " <host> <port> <keyFile> <rt-board-dev>")
     sys.exit(1)
 
 
@@ -33,13 +33,21 @@ def getVoltageHandle(comm, cmd):
     comm.send( (protocolVersion, 3.14) )
     return True
 
+def getAccelHandle(comm, cmd):
+    # TODO: get accelerometer readings
+    comm.send( (protocolVersion, 0, 9.81, 0.1) )
+    return True
+
 def byeHandle(comm, cmd):
     comm.send( (protocolVersion, "bye, bye!") )
     return False
 
 
 class Server:
-    def __init__(self, host, port, key):
+    def __init__(self, host, port, key, rtbDev):
+        # open device
+        # TODO
+        # open socket for incomming connections
         Logger.info("listening on " + host + ":" + str(port))
         self.key = key
         # prepare commands processing dispatching dictionary
@@ -48,6 +56,7 @@ class Server:
                         "set speed":setSpeedHandle,
                         "get speed":getSpeedHandle,
                         "Vin":getVoltageHandle,
+                        "accel":getAccelHandle,
                         "bye":byeHandle
                     }
         # open TCP port for connections
@@ -82,7 +91,7 @@ class Server:
 
 
 
-srv = Server(sys.argv[1], int(sys.argv[2]), Communication.readKeyFromFile(sys.argv[3]) )
+srv = Server(sys.argv[1], int(sys.argv[2]), Communication.readKeyFromFile(sys.argv[3]), sys.argv[4])
 
 while True:
     try:

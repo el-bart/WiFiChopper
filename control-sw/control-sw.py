@@ -58,6 +58,14 @@ class Client:
             raise Exception("invalid response: " + str(resp))
         return resp[1]
 
+    def getAccel(self):
+        Logger.info("getting accelerometer reading")
+        self.comm.send( (protocolVersion, "accel") )
+        resp = self.__getResponse()
+        if len(resp) != 1+3:
+            raise Exception("invalid response: " + str(resp))
+        return (resp[1], resp[2], resp[3])
+
     def bye(self):
         Logger.info("disconnection from server")
         self.comm.send( (protocolVersion, "bye") )
@@ -78,4 +86,5 @@ cln.hello()
 cln.setSpeed(1,2,3)
 print( cln.getSpeed() )
 print( cln.getVoltage() )
+print( cln.getAccel() )
 cln.bye()

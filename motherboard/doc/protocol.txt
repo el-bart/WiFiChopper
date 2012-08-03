@@ -45,3 +45,11 @@ command:
 (V, "bye")
 response:
 (V, "bye, bye!")
+
+
+6. accelerometer reading
+command:
+(V, "accel")
+response:
+(V, X, Y, Z)
+where X, Y and Z are accelerometer's reading for corresponding axis.
