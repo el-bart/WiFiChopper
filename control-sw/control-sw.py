@@ -6,11 +6,19 @@ import socket
 import sys
 
 
-protocolVersion = 1;
-
 if len(sys.argv) != 1+3:
     print(sys.argv[0] + " <host> <port> <keyFile>")
     sys.exit(1)
+
+
+def __toHex(n):
+    return "{0:+#05x}".format(n)
+
+def __toSHex(n):
+    return "{0:#05x}".format(n)
+
+def __fromHex(s):
+    int(s, 16)
 
 
 class Client:
@@ -26,58 +34,49 @@ class Client:
         self.hello()
 
     def hello(self):
-        Logger.info("checking other endpoint")
-        self.comm.send( (protocolVersion, "hello") )
-        resp = self.__getResponse()
-        if resp[1] != "uChaos awaits orders...":
-            raise Exception("invalid device - unexpected response received")
-        return (resp[2], resp[3], resp[4])
+        self.comm.send("hello\n")
+        resp = self.comm.recv()
+        if resp.split()[0] != "WiFiChopper":
+            raise Exception("invalid response from device: " + resp)
+        # return array of version numbers
+        v = resp.split()[2][1:].split('.')
+        # parse as numbers
+        for i in range(0:3):
+          v[i] = __fromHex(v[i])
+        return v;
 
-    def setSpeed(self, main1, main2, rear):
-        Logger.info("setting speed: M1=" + str(main1) + ", M2=" + str(main2) + ", R=" + str(rear))
-        if main1 < 0 or 255 < main1 or main2 < 0 or 255 < main2 or rear < -255 or 255 < rear:
-            raise Exception("requested speed is out of range")
-        self.comm.send( (protocolVersion, "set speed", main1, main2, rear) )
-        resp = self.__getResponse()
-        if resp[1] != "ok":
-            raise Exception("invalid response: " + str(resp[1]))
+    def accel(self):
+        self.comm.send("accel?\n")
+        resp = self.comm.recv()
+        v = respo.split()
+        if len(v) != 3:
+            raise Exception("invalid response: " + resp)
+        # parse as numbers
+        for i in range(0:3):
+          v[i] = __fromHex(v[i])
+        return v;
 
     def getSpeed(self):
-        Logger.info("getting speed")
-        self.comm.send( (protocolVersion, "get speed") )
-        resp = self.__getResponse()
-        if len(resp) != 1+3:
-            raise Exception("invalid response: " + str(resp))
-        return (resp[1], resp[2], resp[3])
+        self.comm.send("eng?\n")
+        resp = self.comm.recv()
+        v = respo.split()
+        if len(v) != 3:
+            raise Exception("invalid response: " + resp)
+        # parse as numbers
+        for i in range(0:3):
+          v[i] = __fromHex(v[i])
+        return v;
+
+    def setSpeed(self, main1, main2, rear):
+        self.comm.send("engset " + toHex(main1) + " " + toHex(main2) + toSHex(rear) + "\n")
+        resp = self.comm.recv()
+        if resp != "set" + __toHex(main1) + __toHex(main2) + toSHex(rear):
+            raise Exception("invalid response: " + resp)
 
     def getVoltage(self):
-        Logger.info("getting input voltage")
-        self.comm.send( (protocolVersion, "Vin") )
-        resp = self.__getResponse()
-        if len(resp) != 1+1:
-            raise Exception("invalid response: " + str(resp))
-        return resp[1]
-
-    def getAccel(self):
-        Logger.info("getting accelerometer reading")
-        self.comm.send( (protocolVersion, "accel") )
-        resp = self.__getResponse()
-        if len(resp) != 1+3:
-            raise Exception("invalid response: " + str(resp))
-        return (resp[1], resp[2], resp[3])
-
-    def bye(self):
-        Logger.info("disconnection from server")
-        self.comm.send( (protocolVersion, "bye") )
-        resp = self.__getResponse()
-        if resp[1] != "bye, bye!":
-            raise Exception("invalid response: " + str(resp))
-
-    def __getResponse(self):
+        self.comm.send("vin?\n")
         resp = self.comm.recv()
-        if resp[0] != protocolVersion:
-            raise Exception("unknown version number: " + str(resp[0]))
-        return resp
+        return __fromHex(resp)
 
 
 cln = Client(sys.argv[1], int(sys.argv[2]), Communication.readKeyFromFile(sys.argv[3]) )

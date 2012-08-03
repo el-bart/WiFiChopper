@@ -2,7 +2,6 @@
 
 from Crypto        import Random
 from Crypto.Cipher import AES
-import cjson
 
 
 class CryptoMod:
@@ -27,9 +26,8 @@ class Communicator:
         self.sock  = sock
         self.crypt = CryptoMod(key)
 
-    def send(self, tuple):
-        js  = cjson.encode(tuple)
-        enc = self.crypt.encrypt(js)
+    def send(self, cmd):
+        enc = self.crypt.encrypt(cmd)
         self.sock.sendall(enc)
 
     def recv(self):
@@ -37,6 +35,5 @@ class Communicator:
             enc = self.sock.recv(1024)
             if len(enc) > 0:
                 break
-        js  = self.crypt.decrypt(enc)
-        tuple = cjson.decode(js)
-        return tuple
+        resp = cjson.decode(enc)
+        return resp
