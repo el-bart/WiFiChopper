@@ -38,3 +38,10 @@ command:
 response:
 (V, A)
 where A is voltage value, that has been read (in Volts).
+
+
+5. disconnection
+command:
+(V, "bye")
+response:
+(V, "bye, bye!")
