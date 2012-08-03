@@ -59,7 +59,7 @@ class Server:
         Logger.info("waiting for incomming connections")
         sock,addr = self.lsock.accept()
         Logger.info("got new connection from " + str(addr))
-        #sock.settimeout(2.0)
+        sock.settimeout(18.0)
         # use communication protocol
         comm = Communication.Communicator(sock, self.key)
         # wait for orders
@@ -83,9 +83,6 @@ class Server:
 
 
 srv = Server(sys.argv[1], int(sys.argv[2]), Communication.readKeyFromFile(sys.argv[3]) )
-
-srv.processClient()             
-sys.exit(0)                 
 
 while True:
     try:

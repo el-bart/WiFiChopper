@@ -74,4 +74,8 @@ class Client:
 
 cln = Client(sys.argv[1], int(sys.argv[2]), Communication.readKeyFromFile(sys.argv[3]) )
 
+cln.hello()
+cln.setSpeed(1,2,3)
+print( cln.getSpeed() )
+print( cln.getVoltage() )
 cln.bye()
