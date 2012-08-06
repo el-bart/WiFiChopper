@@ -3,6 +3,7 @@
 import Communication
 import Logger
 import socket
+import serial
 import sys
 
 
@@ -14,7 +15,7 @@ if len(sys.argv) != 1+4:
 class Server:
     def __init__(self, host, port, key, rtbDev):
         # open serial device
-        self.dev = serial.Serial(port=rtbDev, baurdate=38400, timeout=1)
+        self.dev = serial.Serial(port=rtbDev, baudrate=38400, timeout=1)
         # open socket for incomming connections
         Logger.info("listening on " + host + ":" + str(port))
         self.key = key
@@ -33,12 +34,12 @@ class Server:
         # wait for orders
         while True:
             Logger.info("awaiting new request")
-            cmd = self.comm.recv()
-            Logger.info("got request: " + cmd)
+            cmd = comm.recv()
+            Logger.info("got request: " + cmd.replace("\n", ""))
             self.dev.write(cmd)
             resp = self.dev.readline()
-            Logger.info("sending response: " + resp)
-            self.comm.send(resp)
+            Logger.info("sending response: " + resp.replace("\n", ""))
+            comm.send(resp)
 
 
 
