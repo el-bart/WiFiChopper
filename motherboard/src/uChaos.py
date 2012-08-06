@@ -21,6 +21,7 @@ class Server:
         self.key = key
         # open TCP port for connections
         self.lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.lsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)    # TIME_WAIT sock state workaround
         self.lsock.bind((host, port))
         self.lsock.listen(1)
 
@@ -28,13 +29,16 @@ class Server:
         Logger.info("waiting for incomming connections")
         sock,addr = self.lsock.accept()
         Logger.info("got new connection from " + str(addr))
-        sock.settimeout(18.0)
+        sock.settimeout(4.0)
         # use communication protocol
         comm = Communication.Communicator(sock, self.key)
         # wait for orders
         while True:
             Logger.info("awaiting new request")
             cmd = comm.recv()
+            if len(cmd) == 0:
+                Logger.info("disconnection " + str(addr))
+                break
             Logger.info("got request: " + cmd.replace("\n", ""))
             self.dev.write(cmd)
             resp = self.dev.readline()

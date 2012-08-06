@@ -31,9 +31,6 @@ class Communicator:
         self.sock.sendall(enc)
 
     def recv(self):
-        while True:
-            enc = self.sock.recv(1024)
-            if len(enc) > 0:
-                break
+        enc = self.sock.recv(1024)
         msg = self.crypt.decrypt(enc)
         return msg
