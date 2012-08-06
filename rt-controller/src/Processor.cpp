@@ -157,7 +157,7 @@ void Processor::handleHello(Tokenizer& tokenizer)
     return;
   }
   // send the response
-  USART::sendFlash( PSTR("WiFiChooper RT-board v") );
+  USART::sendFlash( PSTR("WiFiChopper RT-board v") );
   // send version numbers
   USART::send('0'+VERSION[0]);
   USART::send('.');
@@ -278,10 +278,9 @@ void Processor::handleEngSet(Tokenizer& tokenizer)
   eng_.setRear( EngSpeed::RearEng{rearForward, rearValue} );
 
   // sending response
+  USART::sendFlash( PSTR("set") );
   sendAsHex(main1);
-  USART::send(' ');
   sendAsHex(main2);
-  USART::send(' ');
   USART::send( rearForward?'+':'-' );
   sendAsHex(rearValue);
   USART::send('\n');
