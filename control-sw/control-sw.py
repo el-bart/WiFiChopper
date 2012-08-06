@@ -19,7 +19,7 @@ def toSHex(n):
     return sig + toHex(n)
 
 def fromHex(s):
-    int(s, 16)
+    return int(s, 16)
 
 
 class Client:
@@ -82,8 +82,14 @@ class Client:
 
 cln = Client(sys.argv[1], int(sys.argv[2]), Communication.readKeyFromFile(sys.argv[3]) )
 
+print("CMD: hello...")
 cln.hello()
+print("CMD: set speed...")
 cln.setSpeed(1,2,3)
+print("CMD: get speed...")
 print( cln.getSpeed() )
+print("CMD: get voltage...")
 print( cln.getVoltage() )
+print("CMD: get accel...")
 print( cln.getAccel() )
+print("all done!")
