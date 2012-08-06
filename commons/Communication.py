@@ -35,5 +35,5 @@ class Communicator:
             enc = self.sock.recv(1024)
             if len(enc) > 0:
                 break
-        resp = cjson.decode(enc)
-        return resp
+        msg = self.crypt.decrypt(enc)
+        return msg
