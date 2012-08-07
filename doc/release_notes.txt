@@ -1,0 +1,4 @@
+-- v?? --
+* power board for all of the required devices.
+* RT-board for engine control.
+* motherboard images and setup.
