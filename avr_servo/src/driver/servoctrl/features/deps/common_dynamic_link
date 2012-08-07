@@ -1,2 +1,0 @@
-#!/bin/sh
-exec echo "-lboost_filesystem-mt -lboost_system-mt"
