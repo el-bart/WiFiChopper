@@ -1,0 +1,24 @@
+motherboard: compiling
+======================
+
+this section describes how to (cross-)compile piece of code, that is to be run on the motherboard.
+it is assumed 
+
+
+on-host compilation
+-------------------
+
+compilation on local host machine is beneficial mostly for testing and development. if you just
+want to run the system, skip this step.
+
+to compile and run code on your local linux machine it just just enough to do:
+cd uChaos/src && make <TARGET>
+where <TARGET> can be: release, debug, test, mtest. it builds release version, debug version,
+automated tests and manual tests, respectively.
+
+
+cross-compilation
+-----------------
+
+in order to do this, one must download and install OpenWRT sources and add this package to the
+build:
