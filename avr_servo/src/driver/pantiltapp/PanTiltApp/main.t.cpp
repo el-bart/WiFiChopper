@@ -1,0 +1,1 @@
+../../build_process/templates/tut_tests/main.t.cpp

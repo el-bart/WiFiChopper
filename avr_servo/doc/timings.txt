@@ -1,0 +1,4 @@
+* 20ms time period
+* support 256 positions for each servo
+* 2ms/256pos@8MHz => ~60cycles/s
+* 38400bps => ~4B every 1ms

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+SRC_DIR="`pwd`"
+GEN_INCLUDES_DIR="$1"
+
+mkdir -p "$GEN_INCLUDES_DIR" || exit $?
+find . -type f -iname '*.h*' | \
+  while read file
+do
+  if grep -q '^/\* public header \*/$' "$file"
+  then
+    # if header is public, link it
+    INC="$GEN_INCLUDES_DIR/`dirname "$file"`"
+    mkdir -p "$INC" || exit $?
+    ln -s -b "$SRC_DIR/$file" "$GEN_INCLUDES_DIR/$file"  || exit $?
+  else
+    # if header is NOT public, remove it
+    rm -f "$GEN_INCLUDES_DIR/$file" || exit $?
+  fi
+done
+
+exit 0

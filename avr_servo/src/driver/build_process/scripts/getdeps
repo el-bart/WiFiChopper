@@ -1,0 +1,173 @@
+#!/bin/bash
+
+THIS_SCRIPT="$0"
+BN="`basename $0`"
+if [ $# -lt 4 ]
+then
+  echo "$BN <out_gen_path> <deps_path> <gen_libs_path> <component>" >&2
+  echo "(note: $BN must be run from project root)"  >&2
+  exit 1
+fi
+
+# remember output dir
+OUTPUT_DIR="$1"
+shift
+DEPS_PATH="$1"
+BASE_PATH_DIR="`dirname "$DEPS_PATH"`"
+PROFILE="`basename "$DEPS_PATH"`"
+shift
+GEN_LIBS_PATH="$1"
+shift
+
+# reduce_deps <c1> <c2> <c3> ... <cN>
+#   returns minimum list of dependent components
+function reduce_deps
+{
+  echo "$@" | \
+    awk '{ j=1 ; for(i=NF; i>0 ; i-=1) { more[$i]+=1 ; if(more[$i]==1) { out[j]=$i ; j+=1 } } ; for(i=j-1; i>0; i-=1) { printf("%s ", out[i]) } ; print("") }'
+}
+
+# finder_impl <got_deps> <self>
+#   return list of dependent components
+function finder_impl
+{
+  local TMP_SET=""
+  for q in $1
+  do
+    # check all possible files
+    for dep in "$q/$DEPS_PATH" "$q/$BASE_PATH_DIR/common"
+    do
+      # static dependency is not present?
+      [ -f "$dep" ] || continue
+      # save found dependency now
+      TMP_SET="$TMP_SET `cat $dep | xargs echo -n`"
+    done # for dependencies
+  done # for in-queue dependencies
+
+  # output dependencies
+  echo -n "$TMP_SET"
+  # if set is not empty, run again
+  local REDUCED="`reduce_deps "$TMP_SET"`"
+  grep -q " $2 " <<< " $REDUCED " && echo "CYCLE DETECTED: $REDUCED on self $2" >&2 && exit 10
+  [ -z "$TMP_SET" ] || finder_impl "$REDUCED" "$2"
+}
+
+# finder <component>
+#   return list of dependent components
+function finder
+{
+  finder_impl "$1" "$1"
+}
+
+# short name for component - it will be used many times
+C="$1"
+
+# find dependencies and build dependencies file
+out="$OUTPUT_DIR/$C.mk"
+DEPS_FULL="`finder $C | xargs echo`"
+DEPS="`reduce_deps "$DEPS_FULL"`"
+
+DEPS_FILES=""
+COMPILE_FLAGS=""
+LINK_FLAGS=""
+# get list of dependent files and link flags
+for dc in $C $DEPS
+do
+  ROOT="$dc/$BASE_PATH_DIR"
+  DEPS_FILES="$DEPS_FILES $ROOT/common* $ROOT/${PROFILE}*"
+
+  #
+  # this link flags/libs
+  #
+  [ "$dc" != "$C" ] && LINK_FLAGS="$LINK_FLAGS -l$dc"
+
+  #
+  # dynamic dependencies
+  #
+
+  # compile flags
+  test -x "$ROOT/${PROFILE}_dynamic_compile" && COMPILE_FLAGS="$COMPILE_FLAGS `$ROOT/${PROFILE}_dynamic_compile`"
+  test -x "$ROOT/common_dynamic_compile"     && COMPILE_FLAGS="$COMPILE_FLAGS `$ROOT/common_dynamic_compile`"
+  # link flags
+  test -x "$ROOT/${PROFILE}_dynamic_link"    && LINK_FLAGS="$LINK_FLAGS `$ROOT/${PROFILE}_dynamic_link`"
+  test -x "$ROOT/common_dynamic_link"        && LINK_FLAGS="$LINK_FLAGS `$ROOT/common_dynamic_link`"
+done
+
+#
+# add local flags (run for this component only)
+#
+ROOT="$C/$BASE_PATH_DIR"
+test -x "$ROOT/${PROFILE}_dynamic_compile_local" && \
+  COMPILE_FLAGS="$COMPILE_FLAGS `$ROOT/${PROFILE}_dynamic_compile_local`"
+test -x "$ROOT/common_dynamic_compile_local" && \
+  COMPILE_FLAGS="$COMPILE_FLAGS `$ROOT/common_dynamic_compile_local`"
+
+
+# convert deps to libs and libs_deps (libraries this component depends on)
+if [ "`sed 's:^ *$::' <<< "$DEPS"`" ]
+then
+  DEP_LIBS_WC="`sed -e "s:^ *: :" \
+                    -e "s: *$: :" \
+                    -e "s: \+\([^ ]\+\): $GEN_LIBS_PATH/lib\1.*:g" \
+						<<<"$DEPS"`"
+fi
+
+# reverse dependencies order, so that it whould be more natural for make to prefer building
+# base components as first, so that linking won't group at the compilation's end.
+RDEPS="`echo "$DEPS" | awk '{ for(i=NF; i>0; --i) printf("%s ", $i) ; print "" }'`"
+
+#SHELL_DEPS="`sed -e "s:^ *:{$C,:" -e 's: *$:,}:' -e 's: \+:,:g' -e 's:,\+:,:g' <<< "$DEPS"`"
+SHELL_DEPS_COMPILE="`echo "$C $DEPS " | sed -e "s: \+:/$BASE_PATH_DIR/*_dynamic_link* :g"   `"
+SHELL_DEPS_LINK="`   echo "$C $DEPS " | sed -e "s: \+:/$BASE_PATH_DIR/*_dynamic_compile* :g"`"
+#echo "S_DEPS $C: $DEPS  --- $SHELL_DEPS_COMPILE" >&2
+#echo $C:: DEP_WLD_LINK:=\$(shell ls $ROOT/*_dynamic_link* 2>/dev/null | while read file ; do echo "\$\$file" | xargs readlink -f ; done ) >&2
+#exit 1
+
+# write to file
+cat<<EOF > "$out"
+.PHONY: $C
+$C:: $C-LINK
+
+$C-LINK:: LINK_LIBS:=`reduce_deps $LINK_FLAGS`
+$C-LINK:: DEP_LIBS_WC:=$DEP_LIBS_WC
+$C-LINK:: COMPONENT_DIR:=$C
+$C-LINK:: COMPONENT_PART:=LINK
+$C-LINK:: DEP_WLD_LINK_LIST:=\$(shell echo "$C $DEPS " | sed -e "s: \+:/$BASE_PATH_DIR/*_dynamic_link* :g" )
+$C-LINK:: DEP_WLD_LINK:=\$(shell ls \$(DEP_WLD_LINK_LIST) 2>/dev/null | while read file ; do echo "\$\$file" | xargs readlink -f ; done )
+ifeq (,\$(WITHOUT_DEPS))
+$C-LINK:: `test -z "$RDEPS" || echo "$RDEPS " | sed 's: \+:-LINK :g'` $C-OBJECTS
+else
+$C-LINK:: $C-OBJECTS
+endif
+#	echo YYY \$(DEP_WLD_LINK_LIST) / \$(DEP_WLD_LINK)
+#	echo "XX $C-LINK:: $SHELL_DEPS/$BASE_PATH_DIR/*_dynamic_link* 2>/dev/null | while read file ; do echo \"\$\$file\" | xargs readlink -f ; done"
+#	echo XX $C-LINK:: DEP_WLD_LINK:=\$(DEP_WLD_LINK)
+	@\$(build-this-component)
+
+$C-OBJECTS:: CXXFLAGS:=\$(CXXFLAGS) $COMPILE_FLAGS
+$C-OBJECTS:: CFLAGS:=\$(CFLAGS) $COMPILE_FLAGS
+$C-OBJECTS:: COMPONENT_DIR:=$C
+$C-OBJECTS:: COMPONENT_PART:=OBJECTS
+$C-OBJECTS:: DEP_WLD_COMPILE_LIST:=\$(shell echo "$C $DEPS " | sed -e "s: \+:/$BASE_PATH_DIR/*_dynamic_compile* :g" )
+$C-OBJECTS:: DEP_WLD_COMPILE:=\$(shell ls \$(DEP_WLD_COMPILE_LIST) 2>/dev/null | while read file ; do echo "\$\$file" | xargs readlink -f ; done )
+$C-OBJECTS:: $C-MKPUBLIC
+	@\$(build-this-component)
+
+$C-MKPUBLIC:: COMPONENT_DIR:=$C
+$C-MKPUBLIC:: COMPONENT_PART:=MKPUBLIC
+ifeq (,\$(WITHOUT_DEPS))
+$C-MKPUBLIC:: `test -z "$RDEPS" || echo "$RDEPS " | sed 's: \+:-MKPUBLIC :g'`
+else
+$C-MKPUBLIC::
+endif
+	@\$(build-this-component)
+
+# update this dependency file if needed
+$out:: \$(wildcard $DEPS_FILES)
+	@$THIS_SCRIPT "$OUTPUT_DIR" "$DEPS_PATH" "$GEN_LIBS_PATH" "$C"
+EOF
+
+# display info on rebuilding dependency for a given component
+echo "CDEPS $C"
+
+exit 0

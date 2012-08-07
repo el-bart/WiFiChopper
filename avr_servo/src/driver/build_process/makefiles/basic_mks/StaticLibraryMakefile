@@ -1,0 +1,9 @@
+LIBRARY_NAME=lib$(COMPONENT_NAME).a
+export LIBRARY_NAME
+LIBRARY_TYPE=static
+export LIBRARY_TYPE
+COMPONENT_TYPE=library
+export COMPONENT_TYPE
+
+include $(MAKEFILES_COMMON_BASE_DIR)/component_template.mk
+

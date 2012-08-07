@@ -1,0 +1,4 @@
+mother board communication protocol
+===================================
+
+board only forwards commands to RT-board, suing crypto channel (AES-256).

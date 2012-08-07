@@ -1,0 +1,10 @@
+-- v1.0.1 --
+* fixed typos in protocl texts.
+* protocl is now compatible with its description.
+
+
+-- v1.0.0 --
+* working communication protocol.
+* impreved ADC readings precision.
+* fixed hardware version.
+* PWM-based engine speed controller.
