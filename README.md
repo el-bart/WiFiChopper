@@ -1,2 +1,1 @@
-WiFiChopper
-===========
+doc/readme.txt
