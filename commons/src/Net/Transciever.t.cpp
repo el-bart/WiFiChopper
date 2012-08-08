@@ -51,7 +51,7 @@ void testObj::test<3>(void)
 {
   try
   {
-    Transciever t( Util::UniqueDescriptor{-1} );
+    Transciever t( Util::UniqueDescriptor{-1}, Transciever::Address{{{1,2,3,4}}, 4444} );
     fail("no exception on invalid descriptor");
   }
   catch(const Transciever::InvalidDescriptor&)

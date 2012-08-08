@@ -56,7 +56,7 @@ public:
   };
 
 
-  explicit Transciever(Util::UniqueDescriptor&& rep);
+  Transciever(Util::UniqueDescriptor&& rep, const Address& addr);
 
   template<uint8_t N>
   void send(const uint8_t(&buf)[N])
@@ -74,6 +74,7 @@ public:
 
 private:
   Util::UniqueDescriptor rep_;
+  Address                addr_;
 };
 
 

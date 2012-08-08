@@ -1,5 +1,5 @@
 # name of the application
-export PROGRAM_NAME:=uChaos
+export PROGRAM_NAME:=commons
 
 # toolchain
 export CC :=gcc

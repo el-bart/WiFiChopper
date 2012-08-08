@@ -40,7 +40,10 @@ public:
 
   int get(void) const { return desc_; }
 
-  void swap(UniqueDescriptor& other) { std::swap(desc_, other.desc_); }
+  void swap(UniqueDescriptor& other)
+  {
+    std::swap(desc_, other.desc_);
+  }
 
 private:
   int desc_;

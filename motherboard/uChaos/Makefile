@@ -15,7 +15,7 @@ endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) -rLuv ./src/* $(PKG_BUILD_DIR)/
+	$(CP) -rLuv ./src/[^g]* $(PKG_BUILD_DIR)/
 endef
 
 define Build/Configure

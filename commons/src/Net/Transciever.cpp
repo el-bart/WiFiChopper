@@ -10,8 +10,9 @@ namespace Net
 {
 
 
-Transciever::Transciever(Util::UniqueDescriptor&& rep):
-  rep_( std::move(rep) )
+Transciever::Transciever(Util::UniqueDescriptor&& rep, const Address& addr):
+  rep_( std::move(rep) ),
+  addr_(addr)
 {
   if(rep_.get()==-1)
     throw InvalidDescriptor();
@@ -21,7 +22,7 @@ Transciever::Transciever(Util::UniqueDescriptor&& rep):
 void Transciever::send(const uint8_t *buf, const uint8_t size)
 {
   if( write(rep_.get(), buf, size)!=size )
-    throw ErrorIO( strerror(errno) );
+    throw ErrorIO( addr_, strerror(errno) );
   // TODO
 }
 
