@@ -1,0 +1,1 @@
+* prepare some safety protocol in case of communication loss.
