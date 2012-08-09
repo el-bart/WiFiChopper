@@ -3,14 +3,13 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=uChaos
 PKG_RELEASE:=0.0.0
 
-include $(INCLUDE_DIR)/uclibc++.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=WiFiChopper's uC board (i.e. motherboard) driver.
-  DEPENDS:=+uclibcxx
+  DEPENDS:=+libstdcpp
 endef
 
 define Build/Prepare
