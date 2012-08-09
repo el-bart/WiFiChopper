@@ -19,8 +19,8 @@ Crypto::BinData makeKIV(uint8_t mod=0)
 int main(int argc, char **argv)
 {
   std::cout << argv[0] << ": one big TODO... :)" << std::endl;
-  Crypto::Aes256 enc( makeKIV(66), makeKIV(10) );
-  Crypto::Aes256 dec( makeKIV(66), makeKIV(42) );
+  Crypto::Aes256 enc( makeKIV(66) );
+  Crypto::Aes256 dec( makeKIV(66) );
   Crypto::Aes256::Data data;
   for(const char *it="ala ma kota"; *it!=0; ++it)
     data.push_back(*it);
