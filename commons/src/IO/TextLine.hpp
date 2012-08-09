@@ -2,6 +2,7 @@
 #define INCLUDE_IO_TEXTLINE_HPP_FILE
 
 #include <vector>
+#include <algorithm>
 #include <inttypes.h>
 
 #include "IO/Exception.hpp"
@@ -42,6 +43,8 @@ public:
   };
 
 
+  virtual ~TextLine(void) { }
+
   template<size_t N>
   void send(const uint8_t (&data)[N])
   { send(data, N); }
@@ -64,6 +67,7 @@ private:
   virtual size_t readSome(uint8_t *data, size_t size, double timeout) = 0;
 
   typedef std::vector<uint8_t> Buffer;
+
   Buffer buf_;
 };
 
