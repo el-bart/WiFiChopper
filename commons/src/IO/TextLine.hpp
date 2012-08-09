@@ -14,6 +14,13 @@ namespace IO
 class TextLine
 {
 public:
+  struct Timeout: public Exception
+  {
+    explicit Timeout(void):
+      Exception("timed out while waiting for data")
+    { }
+  };
+
   struct TooMuchDataInLine: public Exception
   {
     explicit TooMuchDataInLine(void):

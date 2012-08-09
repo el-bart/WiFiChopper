@@ -1,4 +1,5 @@
 #include <iterator>
+#include <algorithm>
 #include <cassert>
 
 #include "IO/TextLine.hpp"
@@ -57,57 +58,46 @@ size_t TextLine::read(uint8_t *data, size_t size, std::chrono::milliseconds time
   if(data==nullptr)
     throw ParameterError("data pointer cannot be NULL");
 
-  const Util::TimeoutClock<std::chrono::milliseconds> tout(timeout);    // keep track of massing time
+  const Util::TimeoutClock<std::chrono::milliseconds> tout(timeout);    // keep track of remaining time
+  bool                                                firstRun = true;
 
-  // check if there is EOL within the buffer
+  // read-and-check loop
+  while(true)
   {
+    // check for the EOL within the buffer
     const Buffer::iterator it = findEOL( begin(buf_), end(buf_) );
-    if( it!=end(buf_) )
+    if( it!=end(buf_) )                 // got it?
     {
       const size_t len = it - begin(buf_);
       if( size < len )
         throw TooMuchDataInLine();
+      assert( begin(buf_)+len==it );
       copy(begin(buf_), it, data);      // copy to the output buffer
       buf_.erase( begin(buf_), it+1 );  // erase copyied data, including EOL
       return len;
     }
-  } // EOL in the buffer?
 
-  // sanity check
-  if( buf_.size() > size )
-    throw TooMuchDataInLine();
-  // copy data and save location where new part is read from
-  copy( begin(buf_), end(buf_), data );
-
-  // try obtaining new data
-  size_t done = buf_.size();
-  size_t left = size - done;
-  while(left > 0)
-  {
-    const size_t got = readSome(data+done, left, tout.remaining() );
-    uint8_t *it = findEOL(data+done, data+done+got);
-    // found end of line?
-    if( it != data+done+got )
+    // check edge conditions for all but the first run
+    if(firstRun==false)
     {
-      // copy remaining data to the internal buffer
-      buf_.clear();
-      const uint8_t* from  = it+1;                      // skip this EOL
-      const size_t   count = done+got - (from-data);    // 
-      //buf_.reserve(
-      // TODO
+      if( size < buf_.size() )
+        throw TooMuchDataInLine();
+      if( tout.remaining() == std::chrono::milliseconds(0) )
+        throw Timeout();
     }
-    // no end of line - continue searching...
-    done += got;
-    left -= got;
+    else
+      firstRun=false;
+
+    // try reading some more data
+    uint8_t tmp[8*1024];
+    const size_t got = readSome( tmp, tout.remaining() );
+    // copy data to the buffer
+    buf_.reserve( buf_.size() + got );
+    copy( tmp, tmp+got, back_insert_iterator<Buffer>(buf_) );
   }
 
-  // no EOF found and got end of buffer - write, what has been read, into the internal buffer
-  const uint8_t* from  = data + buf_.size();
-  const size_t   count = size - buf_.size();
-  buf_.reserve(count);
-  copy( from, from+count, back_insert_iterator<Buffer>(buf_) );
-  // now tell what's wrong...
-  throw TooMuchDataInLine();
+  // this code is never reached
+  assert(!"we never reach here");
 }
 
 }
