@@ -25,23 +25,27 @@ public:
   virtual const char* mode(void) const = 0;
   virtual size_t blockSize(void) const = 0;
 
-  void encrypt(const uint8_t* data, size_t size)
+  void encrypt(uint8_t* data, size_t size)
   {
     if(data==nullptr)
       throw std::runtime_error("data pointer cannot be null");
+    if( (size%blockSize())!=0 )
+      throw std::runtime_error("data size must be integral multiply of block size");
     encryptImpl(data, size);
   }
 
-  void decrypt(const uint8_t* data, size_t size)
+  void decrypt(uint8_t* data, size_t size)
   {
     if(data==nullptr)
       throw std::runtime_error("data pointer cannot be null");
+    if( (size%blockSize())!=0 )
+      throw std::runtime_error("data size must be integral multiply of block size");
     decryptImpl(data, size);
   }
 
 private:
-  virtual void encryptImpl(const uint8_t* data, size_t size) = 0;
-  virtual void decryptImpl(const uint8_t* data, size_t size) = 0;
+  virtual void encryptImpl(uint8_t* data, size_t size) = 0;
+  virtual void decryptImpl(uint8_t* data, size_t size) = 0;
 };
 
 }
