@@ -9,7 +9,7 @@ namespace Util
 class Clock
 {
 private:
-  typedef chrono::high_resolution_clock Type;
+  typedef std::chrono::high_resolution_clock Type;
 
 public:
   Clock(void):
