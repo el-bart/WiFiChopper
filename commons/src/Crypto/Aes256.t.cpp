@@ -72,17 +72,14 @@ void testObj::test<3>(void)
 {
   const char text[] = "alice has a cypher";
   assert( (sizeof(text) < Aes256::keySize()) && "test text is too long" );
-  std::vector<uint8_t> data( api_.blockSize() );
-  auto it = data.begin();
-  // copy text
-  for(const char* str=text; *str!=0; ++str, ++it)
-    *it = *str;
-  // pad with zeros
-  for(; it!=data.end(); ++it)
-    *it = 0;
+
+  // copy text to vector
+  Algo::Data data;
+  for(const char* str=text; *str!=0; ++str)
+    data.push_back(*str);
 
   // encrypt
-  api_.encrypt( data.data(), data.size() );
+  api_.encrypt(data);
 
   // check if it is not plaintext
   {
@@ -93,7 +90,7 @@ void testObj::test<3>(void)
 
   // decrypt
   Aes256 dec( makeKey(), makeIV() );
-  dec.decrypt( data.data(), data.size() );
+  dec.decrypt(data);
 
   // check decrypted message
   {
