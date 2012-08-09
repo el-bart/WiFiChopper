@@ -9,4 +9,4 @@ export LD :=$(CXX)
 # extra flags, if needed
 export CFLAGS  +=
 export CXXFLAGS+=-std=c++0x
-export LDFLAGS +=-lrt
+export LDFLAGS +=-lmcrypt -lrt
