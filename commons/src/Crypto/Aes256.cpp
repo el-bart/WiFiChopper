@@ -7,12 +7,12 @@
 namespace Crypto
 {
 
-Aes256::Aes256(BinData key, BinData iv):
+Aes256::Aes256(BinData key):
   key_( std::move(key) ),
-  iv_( std::move(iv) ),
+  iv_( generateRandomData( ivSize() ) ),
   td_(MCRYPT_RIJNDAEL_256, MCRYPT_CFB)
 {
-  if( key.size()!=iv.size() )
+  if( key_.size()!=iv_.size() )
     throw std::runtime_error("key and IV size differ");
 
   assert( static_cast<size_t>(mcrypt_enc_get_key_size(td_.get()))==keySize() );

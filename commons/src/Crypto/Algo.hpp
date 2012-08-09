@@ -35,6 +35,10 @@ public:
   void encrypt(Data& buf);
   void decrypt(Data& buf);
 
+protected:
+  BinData generateRandomData(size_t len);
+
+
 private:
   void addPadding(Data& buf) const;
   void removePadding(Data& buf) const;

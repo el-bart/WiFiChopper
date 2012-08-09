@@ -12,7 +12,7 @@ namespace
 struct TestClass
 {
   TestClass(void):
-    aes_( makeKey(), makeIV() ),
+    aes_( makeKey() ),
     api_(aes_)
   { }
 
@@ -21,14 +21,6 @@ struct TestClass
     BinData tmp( Aes256::keySize() );
     for(size_t i=0; i<tmp.size(); ++i)
       tmp.data()[i]=i;
-    return std::move(tmp);
-  }
-
-  BinData makeIV(void) const
-  {
-    BinData tmp( Aes256::ivSize() );
-    for(size_t i=0; i<tmp.size(); ++i)
-      tmp.data()[i]=0x42;
     return std::move(tmp);
   }
 
@@ -89,7 +81,7 @@ void testObj::test<3>(void)
   }
 
   // decrypt
-  Aes256 dec( makeKey(), makeIV() );
+  Aes256 dec( makeKey() );
   dec.decrypt(data);
 
   // check decrypted message

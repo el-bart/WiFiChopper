@@ -28,6 +28,11 @@ struct TestAlgo: public Algo
     tmp.swap(last_);
   }
 
+  BinData getRand(void)
+  {
+    return generateRandomData(666);
+  }
+
   Algo::Data last_;
 };
 
@@ -190,6 +195,21 @@ void testObj::test<8>(void)
 
   ta_.decrypt(data_);
   ensure_equals("invalid buffer size", data_.size(), 0);
+}
+
+// test random data generation
+template<>
+template<>
+void testObj::test<9>(void)
+{
+  BinData r1 = ta_.getRand();
+  BinData r2 = ta_.getRand();
+  ensure_equals("size missmatch", r1.size(), r2.size() );
+  // check if they are NOT equal
+  for(size_t i=0; i<r1.size(); ++i)
+    if( r1.data()[i] != r2.data()[i] )
+      return;
+  fail("both random blocks are identical");
 }
 
 } // namespace tut

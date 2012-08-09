@@ -13,7 +13,7 @@ namespace Crypto
 class Aes256: public Algo
 {
 public:
-  Aes256(BinData key, BinData iv);
+  explicit Aes256(BinData key);
   virtual ~Aes256(void);
 
   virtual const char* name(void) const;

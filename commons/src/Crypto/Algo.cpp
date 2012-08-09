@@ -31,6 +31,15 @@ void Algo::decrypt(Data& buf)
 }
 
 
+BinData Algo::generateRandomData(size_t len)
+{
+  BinData tmp(len);
+  for(size_t i=0; i<tmp.size(); ++i)
+    tmp.data()[i] = rand_();
+  return std::move(tmp);
+}
+
+
 void Algo::addPadding(Data& buf) const
 {
   const size_t bs     = blockSize();
