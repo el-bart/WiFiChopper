@@ -8,7 +8,6 @@
 #include "IO/TextLine.hpp"
 
 using namespace std;
-using namespace std::chrono;
 using namespace IO;
 
 namespace
@@ -29,7 +28,7 @@ struct TestLine: public TextLine
   }
 
 
-  virtual size_t readSome(uint8_t *data, size_t size, std::chrono::milliseconds timeout)
+  virtual size_t readSome(uint8_t *data, size_t size, const double timeout)
   {
     ++recvCount_;
     const size_t len = min( min(size, recv_.size()), maxRecv_ );
@@ -67,7 +66,7 @@ struct TestClass
   }
 
 
-  void testRecv(const size_t n, const milliseconds timeout, const string expected)
+  void testRecv(const size_t n, const double timeout, const string expected)
   {
     unique_ptr<uint8_t[]> buf(new uint8_t[n]);
     size_t len = tl_.read(buf.get(), n, timeout);
@@ -135,7 +134,7 @@ template<>
 void testObj::test<4>(void)
 {
   addToRecvBuffer("test string\n");
-  testRecv(32, milliseconds(10), "test string");
+  testRecv(32, 0.0010, "test string");
 }
 
 // test exception on null
@@ -145,7 +144,7 @@ void testObj::test<5>(void)
 {
   try
   {
-    api_.read(nullptr, 0, milliseconds(10));
+    api_.read(nullptr, 0, 0.0010);
     fail("no exception thrown on nullptr");
   }
   catch(const TextLine::ParameterError&)
@@ -159,7 +158,7 @@ void testObj::test<6>(void)
 {
   addToRecvBuffer("some test\n");
   tl_.maxRecv_=3;
-  testRecv(32, milliseconds(1000), "some test");
+  testRecv(32, 1.0, "some test");
   ensure_equals("invalid number of calls to read()", tl_.recvCount_, 4);
 }
 
@@ -172,7 +171,7 @@ void testObj::test<7>(void)
   tl_.maxRecv_=3;
   try
   {
-    testRecv(32, milliseconds(0), "...");
+    testRecv(32, 0.0, "...");
     fail("no error uppon timeout");
   }
   catch(const TextLine::Timeout&)
@@ -185,7 +184,7 @@ template<>
 void testObj::test<8>(void)
 {
   addToRecvBuffer("some test\n");
-  testRecv(32, milliseconds(0), "some test");
+  testRecv(32, 0.0, "some test");
 }
 
 // test error when there is too much data to fit in provided buffer
@@ -196,7 +195,7 @@ void testObj::test<9>(void)
   addToRecvBuffer("some test\n");
   try
   {
-    testRecv(5, milliseconds(1000), "...");
+    testRecv(5, 1.0, "...");
     fail("no exception when buffer is too short");
   }
   catch(const TextLine::TooMuchDataInLine&)
@@ -212,7 +211,7 @@ void testObj::test<10>(void)
   tl_.maxRecv_=2;
   try
   {
-    testRecv(5, milliseconds(1000), "...");
+    testRecv(5, 1.0, "...");
     fail("no exception when buffer is too short");
   }
   catch(const TextLine::TooMuchDataInLine&)
@@ -227,7 +226,7 @@ void testObj::test<11>(void)
   addToRecvBuffer("some test");
   try
   {
-    testRecv(32, milliseconds(1), "...");
+    testRecv(32, 0.001, "...");
     fail("no exception when timeout occures when no EOL is found");
   }
   catch(const TextLine::Timeout&)
@@ -240,8 +239,8 @@ template<>
 void testObj::test<12>(void)
 {
   addToRecvBuffer("some test\nother data\n");
-  testRecv(32, milliseconds(1), "some test");
-  testRecv(32, milliseconds(1), "other data");
+  testRecv(32, 0.001, "some test");
+  testRecv(32, 0.001, "other data");
 }
 
 // test reading data in parts, when there is intermediate appending
@@ -250,9 +249,9 @@ template<>
 void testObj::test<13>(void)
 {
   addToRecvBuffer("some test\nother ");
-  testRecv(32, milliseconds(1), "some test");
+  testRecv(32, 0.001, "some test");
   addToRecvBuffer("data\n");
-  testRecv(32, milliseconds(1), "other data");
+  testRecv(32, 0.001, "other data");
 }
 
 // test if data does not disappear when timeout is reached
@@ -263,14 +262,14 @@ void testObj::test<14>(void)
   addToRecvBuffer("some test");
   try
   {
-    testRecv(32, milliseconds(0), "...");
+    testRecv(32, 0.0, "...");
     fail("no exception when timeout occures when no EOL is found");
   }
   catch(const TextLine::Timeout&)
   { }
   // sinish text
   addToRecvBuffer("\n");
-  testRecv(32, milliseconds(1), "some test");
+  testRecv(32, 0.001, "some test");
 }
 
 } // namespace tut

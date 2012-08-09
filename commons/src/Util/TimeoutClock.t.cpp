@@ -1,16 +1,16 @@
+#include <iomanip>
 #include <tut/tut.hpp>
 #include <unistd.h>
 
 #include "Util/TimeoutClock.hpp"
 
-using namespace std::chrono;
 using namespace Util;
 
 namespace
 {
 struct TestClass
 {
-  typedef TimeoutClock<microseconds> ToutClk;
+  typedef TimeoutClock ToutClk;
 };
 
 typedef tut::test_group<TestClass> factory;
@@ -28,8 +28,8 @@ template<>
 template<>
 void testObj::test<1>(void)
 {
-  const ToutClk tc( microseconds(5*1000*1000) );
-  ensure("already timed out?!", tc.remaining() > microseconds(0) );
+  const ToutClk tc(5.0);
+  ensure("already timed out?!", tc.remaining() > 0 );
 }
 
 // test timeout
@@ -37,9 +37,9 @@ template<>
 template<>
 void testObj::test<2>(void)
 {
-  const ToutClk tc( microseconds(1) );
+  const ToutClk tc(0.000001);
   usleep(1);
-  ensure("not timed out", tc.remaining() == microseconds(0) );
+  ensure_equals("not timed out", tc.remaining(), 0 );
 }
 
 // test long-timed-out
@@ -47,9 +47,9 @@ template<>
 template<>
 void testObj::test<3>(void)
 {
-  const ToutClk tc( microseconds(1) );
+  const ToutClk tc(0.000001);
   usleep(5);
-  ensure("not timed out", tc.remaining() == microseconds(0) );
+  ensure_equals("not timed out", tc.remaining(), 0 );
 }
 
 } // namespace tut

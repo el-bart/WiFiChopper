@@ -52,28 +52,28 @@ void TextLine::send(const uint8_t *data, const size_t size)
 }
 
 
-size_t TextLine::read(uint8_t *data, size_t size, std::chrono::milliseconds timeout)
+size_t TextLine::read(uint8_t *data, size_t size, const double timeout)
 {
   // sanity check
   if(data==nullptr)
     throw ParameterError("data pointer cannot be NULL");
 
-  const Util::TimeoutClock<std::chrono::milliseconds> tout(timeout);    // keep track of remaining time
-  bool                                                firstRun = true;
+  const Util::TimeoutClock tout(timeout);       // keep track of remaining time
+  bool                     firstRun = true;
 
   // read-and-check loop
   while(true)
   {
     // check for the EOL within the buffer
-    const Buffer::iterator it = findEOL( begin(buf_), end(buf_) );
-    if( it!=end(buf_) )                 // got it?
+    const Buffer::iterator it = findEOL( buf_.begin(), buf_.end() );
+    if( it!=buf_.end() )                // got it?
     {
-      const size_t len = it - begin(buf_);
+      const size_t len = it - buf_.begin();
       if( size < len )
         throw TooMuchDataInLine();
-      assert( begin(buf_)+len==it );
-      copy(begin(buf_), it, data);      // copy to the output buffer
-      buf_.erase( begin(buf_), it+1 );  // erase copyied data, including EOL
+      assert( buf_.begin()+len==it );
+      copy(buf_.begin(), it, data);     // copy to the output buffer
+      buf_.erase( buf_.begin(), it+1 ); // erase copyied data, including EOL
       return len;
     }
 
@@ -82,7 +82,7 @@ size_t TextLine::read(uint8_t *data, size_t size, std::chrono::milliseconds time
     {
       if( size < buf_.size() )
         throw TooMuchDataInLine();
-      if( tout.remaining() == std::chrono::milliseconds(0) )
+      if( tout.remaining() == 0 )
         throw Timeout();
     }
     else

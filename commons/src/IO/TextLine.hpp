@@ -1,9 +1,8 @@
 #ifndef INCLUDE_IO_TEXTLINE_HPP_FILE
 #define INCLUDE_IO_TEXTLINE_HPP_FILE
 
-#include <chrono>
 #include <vector>
-#include <cinttypes>
+#include <inttypes.h>
 
 #include "IO/Exception.hpp"
 
@@ -49,9 +48,9 @@ public:
   void send(const uint8_t *data, size_t size);
 
   template<size_t N>
-  size_t read(uint8_t (&data)[N], const std::chrono::milliseconds timeout)
+  size_t read(uint8_t (&data)[N], const double timeout)
   { return read(data, N, timeout); }
-  size_t read(uint8_t *data, size_t size, std::chrono::milliseconds timeout);
+  size_t read(uint8_t *data, size_t size, double timeout);
 
 private:
   template<size_t N>
@@ -60,9 +59,9 @@ private:
   virtual size_t sendSome(const uint8_t *data, size_t size) = 0;
 
   template<size_t N>
-  size_t readSome(uint8_t (&data)[N], const std::chrono::milliseconds timeout)
+  size_t readSome(uint8_t (&data)[N], const double timeout)
   { return readSome(data, N, timeout); }
-  virtual size_t readSome(uint8_t *data, size_t size, std::chrono::milliseconds timeout) = 0;
+  virtual size_t readSome(uint8_t *data, size_t size, double timeout) = 0;
 
   typedef std::vector<uint8_t> Buffer;
   Buffer buf_;

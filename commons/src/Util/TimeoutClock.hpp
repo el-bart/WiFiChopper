@@ -1,30 +1,29 @@
 #ifndef INCLUDE_UTIL_TIMEOUTCLOCK_HPP_FILE
 #define INCLUDE_UTIL_TIMEOUTCLOCK_HPP_FILE
 
-#include "Util/Clock.hpp"
+#include "Util/ClockTimer.hpp"
 
 namespace Util
 {
 
-template<typename Duration>
 class TimeoutClock
 {
 public:
-  explicit TimeoutClock(Duration timeout):
+  explicit TimeoutClock(double timeout):
     timeout_(timeout)
   { }
 
-  Duration remaining(void) const
+  double remaining(void) const
   {
-    const auto e = clk_.elapsed<Duration>();
-    if( timeout_ < e )
-      return Duration(0);
+    const auto e = clk_.elapsed();
+    if( timeout_ <= e )
+      return 0.0;
     return timeout_ - e;
   }
 
 private:
-  Clock    clk_;
-  Duration timeout_;
+  ClockTimerRT clk_;
+  double       timeout_;
 };
 
 }
