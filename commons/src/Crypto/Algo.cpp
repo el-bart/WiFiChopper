@@ -10,6 +10,27 @@ Algo::Algo(void):
 {
 }
 
+
+void Algo::encrypt(Data& buf)
+{
+  addPadding(buf);
+  assert( buf.size()%blockSize() == 0 );
+  encryptImpl( buf.data(), buf.size() );
+}
+
+
+void Algo::decrypt(Data& buf)
+{
+  const size_t bs = blockSize();
+  if( buf.size()%bs != 0 )
+    throw std::runtime_error("invalid padding");
+  if( buf.size()<2*bs )
+    throw std::runtime_error("not enough data in the buffer");
+  decryptImpl( buf.data(), buf.size() );
+  removePadding(buf);
+}
+
+
 void Algo::addPadding(Data& buf) const
 {
   const size_t bs     = blockSize();
@@ -21,8 +42,8 @@ void Algo::addPadding(Data& buf) const
   // step 1: add random block at the begin
   {
     uint8_t randJunk[bs];
-    for(auto& b: randJunk)
-      b = rand_();
+    for(size_t i=0; i<bs; ++i)
+      randJunk[i] = rand_();
     buf.insert( buf.begin(), randJunk, randJunk+bs );
   }
 

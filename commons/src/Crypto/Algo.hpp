@@ -32,22 +32,8 @@ public:
   virtual const char* mode(void) const = 0;
   virtual size_t blockSize(void) const = 0;
 
-  void encrypt(Data& buf)
-  {
-    addPadding(buf);
-    assert( buf.size()%blockSize() == 0 );
-    encryptImpl( buf.data(), buf.size() );
-  }
-
-  void decrypt(Data& buf)
-  {
-    if( buf.size()%blockSize() != 0 )
-      throw std::runtime_error("invalid padding");
-    if( buf.size()<2*blockSize() )
-      throw std::runtime_error("not enough data in the buffer");
-    decryptImpl( buf.data(), buf.size() );
-    removePadding(buf);
-  }
+  void encrypt(Data& buf);
+  void decrypt(Data& buf);
 
 private:
   void addPadding(Data& buf) const;
