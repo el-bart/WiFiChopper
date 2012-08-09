@@ -19,9 +19,10 @@ public:
   template<typename Duration>
   Duration elapsed(void) const
   {
-    const Type::time_point now  = Type::now();
-    const Duration         diff = Duration(now-start_);
-    return diff;
+    const Type::time_point now   = Type::now();
+    const auto             diff  = now-start_;
+    const Duration         final = std::chrono::duration_cast<Duration>(diff);
+    return final;
   }
 
 private:

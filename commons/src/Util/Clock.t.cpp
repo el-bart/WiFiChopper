@@ -44,4 +44,14 @@ void testObj::test<2>(void)
   ensure("values do not differ enough", d1<d2);
 }
 
+// test conversion to milliseconds
+template<>
+template<>
+void testObj::test<3>(void)
+{
+  usleep(1*1000);
+  const auto d = clk_.elapsed<milliseconds>();
+  ensure("too short time elapsed", d >= milliseconds(1) );
+}
+
 } // namespace tut
