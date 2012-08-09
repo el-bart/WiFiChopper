@@ -9,7 +9,7 @@ define Package/$(PKG_NAME)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=WiFiChopper's uC board (i.e. motherboard) driver.
-  DEPENDS:=+libstdcpp
+  DEPENDS:=+libstdcpp +libmcrypt +librt +libpthread
 endef
 
 define Build/Prepare

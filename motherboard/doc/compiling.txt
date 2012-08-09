@@ -23,5 +23,6 @@ cross-compilation
 in order to do this, one must download and install OpenWRT sources and add this package to the
 build:
 
-be sure to use gcc-4.7 or newer. this can be setup in "Advanced configuration options
-(for developers)" -> "Toolchain Options" -> "GCC compiler Version" menu.
+additional packages required are:
+libmcrypt: "Libraries" -> "libmcrypt"
+librt: "Base system" -> "librt"
