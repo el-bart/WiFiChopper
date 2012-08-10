@@ -1,5 +1,5 @@
 #include <tut/tut.hpp>
-#include <sstream>
+#include <algorithm>
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -94,6 +94,15 @@ void testObj::test<3>(void)
   }
   catch(const std::runtime_error&)
   { }
+}
+
+// test movability
+template<>
+template<>
+void testObj::test<4>(void)
+{
+  c1_ = std::move(c2_);
+  Channel tmp( std::move(c1_) );
 }
 
 } // namespace tut
