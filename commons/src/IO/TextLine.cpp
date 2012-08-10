@@ -31,33 +31,33 @@ Iter findEOL(const Iter begin, const Iter end)
 }
 
 
-void TextLine::send(const uint8_t *data, const size_t size)
-{
-  if(data==nullptr)
-    throw ParameterError("data pointer cannot be NULL");
 
+TextLine::TextLine(const size_t maxLineLen):
+  maxLineLen_(maxLineLen)
+{ }
+
+
+void TextLine::send(const Data& data)
+{
   // send data
   size_t done = 0;
-  size_t left = size;
+  size_t left = data.size();
   while(left>0)
   {
-    const size_t bytes = sendSome(data+done, left);
+    const size_t bytes = sendSome(data.data()+done, left);
     done += bytes;
     left -= bytes;
   }
 
   // send eol
-  if( sendSome(g_eol) != Util::tabSize(g_eol) )
+  const size_t eolSize = Util::tabSize(g_eol);
+  if( sendSome(g_eol, eolSize) != eolSize )
     throw SendError("unable to send EOL mark");
 }
 
 
-size_t TextLine::read(uint8_t *data, size_t size, const double timeout)
+void TextLine::read(Data& data, const double timeout)
 {
-  // sanity check
-  if(data==nullptr)
-    throw ParameterError("data pointer cannot be NULL");
-
   const Util::TimeoutClock tout(timeout);       // keep track of remaining time
   bool                     firstRun = true;
 
@@ -65,35 +65,33 @@ size_t TextLine::read(uint8_t *data, size_t size, const double timeout)
   while(true)
   {
     // check for the EOL within the buffer
-    const Buffer::iterator it = findEOL( buf_.begin(), buf_.end() );
+    // TODO: this find can be optimized by adding offset, to skip parts that have been already checked in the previous iteration(s)
+    const Data::iterator it = findEOL( buf_.begin(), buf_.end() );
     if( it!=buf_.end() )                // got it?
     {
       const size_t len = it - buf_.begin();
-      if( size < len )
-        throw TooMuchDataInLine();
       assert( buf_.begin()+len==it );
-      copy(buf_.begin(), it, data);     // copy to the output buffer
-      buf_.erase( buf_.begin(), it+1 ); // erase copyied data, including EOL
-      return len;
+      data.reserve( data.size() + len );                            // prepare place for new data
+      copy(buf_.begin(), it, back_insert_iterator<Data>(data) );    // copy to the output buffer
+      buf_.erase( buf_.begin(), it+1 );                             // erase copyied data, including EOL
+      return;                                                       // ok - we're done here!
     }
 
-    // check edge conditions for all but the first run
-    if(firstRun==false)
+    // line too long?
+    if( maxLineLen_ <= buf_.size() )
     {
-      if( size < buf_.size() )
-        throw TooMuchDataInLine();
-      if( tout.remaining() == 0 )
-        throw Timeout();
+      buf_.clear();                   // next calls should NOT fail - truncte buffer
+      throw TooMuchDataInLine();      // report an error
     }
+
+    // check for timeout starting with the 2nd iteration (timeout==0 means one read after all...)
+    if( firstRun == false && tout.remaining() == 0 )
+      throw Timeout();
     else
-      firstRun=false;
+      firstRun = false;
 
     // try reading some more data
-    uint8_t tmp[8*1024];
-    const size_t got = readSome( tmp, tout.remaining() );
-    // copy data to the buffer
-    buf_.reserve( buf_.size() + got );
-    copy( tmp, tmp+got, back_insert_iterator<Buffer>(buf_) );
+    readSome( buf_, tout.remaining() );
   }
 
   // this code is never reached

@@ -15,33 +15,34 @@ namespace
 
 struct TestLine: public TextLine
 {
-  typedef std::vector<uint8_t> Queue;
-
+  explicit TestLine(size_t maxLineLen = 128):
+    TextLine(maxLineLen)
+  { }
 
   virtual size_t sendSome(const uint8_t *data, const size_t size)
   {
     ++sentCount_;
     const size_t len = min(maxSend_, size);
     sent_.reserve( sent_.size() + len );
-    copy( data, data+len, back_insert_iterator<Queue>(sent_) );
+    copy( data, data+len, back_insert_iterator<Data>(sent_) );
     return len;
   }
 
 
-  virtual size_t readSome(uint8_t *data, size_t size, const double timeout)
+  virtual size_t readSome(Data& data, const double timeout)
   {
     ++recvCount_;
-    const size_t len = min( min(size, recv_.size()), maxRecv_ );
-    copy( begin(recv_), begin(recv_)+len, data );
+    const size_t len = min( recv_.size(), maxRecv_ );
+    copy( begin(recv_), begin(recv_)+len, back_insert_iterator<Data>(data) );
     recv_.erase( begin(recv_), begin(recv_)+len );
     return len;
   }
 
-  Queue  sent_;
+  Data   sent_;
   size_t maxSend_   = 128;
   size_t sentCount_ = 0;
 
-  Queue  recv_;
+  Data   recv_;
   size_t maxRecv_   = 128;
   size_t recvCount_ = 0;
 };
@@ -57,8 +58,8 @@ struct TestClass
   void testSend(const string data)
   {
     tl_.sent_.clear();
-    TestLine::Queue q( begin(data), end(data) );
-    api_.send( &q[0], q.size() );
+    const TestLine::Data q( begin(data), end(data) );
+    api_.send(q);
     // test output
     string out;
     copy( begin(tl_.sent_), end(tl_.sent_), back_insert_iterator<string>(out) );
@@ -66,19 +67,21 @@ struct TestClass
   }
 
 
-  void testRecv(const size_t n, const double timeout, const string expected)
+  void testRecv(const double timeout, const string expected, TestLine* ptr = nullptr)
   {
-    unique_ptr<uint8_t[]> buf(new uint8_t[n]);
-    size_t len = tl_.read(buf.get(), n, timeout);
+    TestLine& ref = (ptr)?*ptr:tl_;
+    TextLine::Data buf;
+    ref.read(buf, timeout);
     string out;
-    copy( buf.get(), buf.get()+len, back_insert_iterator<string>(out) );
+    copy( buf.begin(), buf.end(), back_insert_iterator<string>(out) );
     tut::ensure_equals("invalid content read", out, expected);
   }
 
 
-  void addToRecvBuffer(const string data)
+  void addToRecvBuffer(const string data, TestLine* ptr = nullptr)
   {
-    copy( begin(data), end(data), back_insert_iterator<TestLine::Queue>(tl_.recv_) );
+    TestLine& ref = (ptr)?*ptr:tl_;
+    copy( begin(data), end(data), back_insert_iterator<TestLine::Data>(ref.recv_) );
   }
 
 
@@ -114,41 +117,13 @@ void testObj::test<2>(void)
   ensure_equals("invalid number of calls to send()", tl_.sentCount_, 6+1);
 }
 
-// test exception on null
-template<>
-template<>
-void testObj::test<3>(void)
-{
-  try
-  {
-    api_.send(nullptr, 0);
-    fail("no exception thrown on nullptr");
-  }
-  catch(const TextLine::ParameterError&)
-  { }
-}
-
 // test reading sample string
 template<>
 template<>
 void testObj::test<4>(void)
 {
   addToRecvBuffer("test string\n");
-  testRecv(32, 0.0010, "test string");
-}
-
-// test exception on null
-template<>
-template<>
-void testObj::test<5>(void)
-{
-  try
-  {
-    api_.read(nullptr, 0, 0.0010);
-    fail("no exception thrown on nullptr");
-  }
-  catch(const TextLine::ParameterError&)
-  { }
+  testRecv(0.0010, "test string");
 }
 
 // test receiving in small parts
@@ -158,7 +133,7 @@ void testObj::test<6>(void)
 {
   addToRecvBuffer("some test\n");
   tl_.maxRecv_=3;
-  testRecv(32, 1.0, "some test");
+  testRecv(1.0, "some test");
   ensure_equals("invalid number of calls to read()", tl_.recvCount_, 4);
 }
 
@@ -171,7 +146,7 @@ void testObj::test<7>(void)
   tl_.maxRecv_=3;
   try
   {
-    testRecv(32, 0.0, "...");
+    testRecv(0.0, "...");
     fail("no error uppon timeout");
   }
   catch(const TextLine::Timeout&)
@@ -184,18 +159,20 @@ template<>
 void testObj::test<8>(void)
 {
   addToRecvBuffer("some test\n");
-  testRecv(32, 0.0, "some test");
+  testRecv(0.0, "some test");
 }
 
-// test error when there is too much data to fit in provided buffer
+// test error when there is too much data to fit in max-sized buffer
 template<>
 template<>
 void testObj::test<9>(void)
 {
-  addToRecvBuffer("some test\n");
+  TestLine tl(5);
+  tl.maxRecv_ = 4;
+  addToRecvBuffer("some test\n", &tl);
   try
   {
-    testRecv(5, 1.0, "...");
+    testRecv(1.0, "...", &tl);
     fail("no exception when buffer is too short");
   }
   catch(const TextLine::TooMuchDataInLine&)
@@ -207,11 +184,12 @@ template<>
 template<>
 void testObj::test<10>(void)
 {
-  addToRecvBuffer("some test\n");
-  tl_.maxRecv_=2;
+  TestLine tl(5);
+  addToRecvBuffer("some test\n", &tl);
+  tl.maxRecv_=2;
   try
   {
-    testRecv(5, 1.0, "...");
+    testRecv(1.0, "...", &tl);
     fail("no exception when buffer is too short");
   }
   catch(const TextLine::TooMuchDataInLine&)
@@ -226,7 +204,7 @@ void testObj::test<11>(void)
   addToRecvBuffer("some test");
   try
   {
-    testRecv(32, 0.001, "...");
+    testRecv(0.001, "...");
     fail("no exception when timeout occures when no EOL is found");
   }
   catch(const TextLine::Timeout&)
@@ -239,8 +217,8 @@ template<>
 void testObj::test<12>(void)
 {
   addToRecvBuffer("some test\nother data\n");
-  testRecv(32, 0.001, "some test");
-  testRecv(32, 0.001, "other data");
+  testRecv(0.001, "some test");
+  testRecv(0.001, "other data");
 }
 
 // test reading data in parts, when there is intermediate appending
@@ -249,9 +227,9 @@ template<>
 void testObj::test<13>(void)
 {
   addToRecvBuffer("some test\nother ");
-  testRecv(32, 0.001, "some test");
+  testRecv(0.001, "some test");
   addToRecvBuffer("data\n");
-  testRecv(32, 0.001, "other data");
+  testRecv(0.001, "other data");
 }
 
 // test if data does not disappear when timeout is reached
@@ -262,14 +240,14 @@ void testObj::test<14>(void)
   addToRecvBuffer("some test");
   try
   {
-    testRecv(32, 0.0, "...");
+    testRecv(0.0, "...");
     fail("no exception when timeout occures when no EOL is found");
   }
   catch(const TextLine::Timeout&)
   { }
-  // sinish text
+  // finish text
   addToRecvBuffer("\n");
-  testRecv(32, 0.001, "some test");
+  testRecv(0.001, "some test");
 }
 
 } // namespace tut

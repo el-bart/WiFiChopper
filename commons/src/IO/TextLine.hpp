@@ -43,32 +43,20 @@ public:
   };
 
 
+  typedef std::vector<uint8_t> Data;
+
+  explicit TextLine(size_t maxLineLen=4*1024);
   virtual ~TextLine(void) { }
 
-  template<size_t N>
-  void send(const uint8_t (&data)[N])
-  { send(data, N); }
-  void send(const uint8_t *data, size_t size);
-
-  template<size_t N>
-  size_t read(uint8_t (&data)[N], const double timeout)
-  { return read(data, N, timeout); }
-  size_t read(uint8_t *data, size_t size, double timeout);
+  void send(const Data& data);
+  void read(Data& data, double timeout);
 
 private:
-  template<size_t N>
-  size_t sendSome(const uint8_t (&data)[N])
-  { return sendSome(data, N); }
   virtual size_t sendSome(const uint8_t *data, size_t size) = 0;
+  virtual size_t readSome(Data& data, double timeout) = 0;
 
-  template<size_t N>
-  size_t readSome(uint8_t (&data)[N], const double timeout)
-  { return readSome(data, N, timeout); }
-  virtual size_t readSome(uint8_t *data, size_t size, double timeout) = 0;
-
-  typedef std::vector<uint8_t> Buffer;
-
-  Buffer buf_;
+  Data   buf_;
+  size_t maxLineLen_;
 };
 
 }
