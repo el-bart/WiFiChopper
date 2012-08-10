@@ -12,10 +12,10 @@ ClientBuilder::ClientBuilder(const Net::Address& addr, Key key):
   key_( std::move(key) )
 { }
 
-LineComm ClientBuilder::buildImpl(void)
+LineCommPtr ClientBuilder::buildImpl(void)
 {
   Net::Channel chn = Net::connectToServer(addr_);
-  return LineComm( std::move(chn), key_ );
+  return LineCommPtr( new LineCommNetwork( std::move(chn), key_ ) );
 }
 
 }

@@ -4,10 +4,6 @@
 #include <string>
 #include <memory>
 
-#include "IO/TextLine.hpp"
-#include "Net/Channel.hpp"
-#include "Crypto/Algo.hpp"
-
 
 namespace IO
 {
@@ -15,21 +11,22 @@ namespace IO
 class LineComm
 {
 public:
-  struct Key: public Crypto::BinData
-  {
-    Key(void);
-  };
+  LineComm(void) { }
+  virtual ~LineComm(void) { }
 
+  // noncopyable:
+  LineComm(const LineComm&) = delete;
+  LineComm& operator=(const LineComm&) = delete;
+  // nonmovable:
+  LineComm(LineComm&&) = delete;
+  LineComm& operator=(LineComm&&) = delete;
 
-  LineComm(Net::Channel chn, Key key);
-
-  void send(const std::string& line);
-  std::string read(const double timeout);
-
-private:
-  std::unique_ptr<Crypto::Algo> crypt_;
-  std::unique_ptr<IO::TextLine> comm_;
+  virtual void send(const std::string& line) = 0;
+  virtual std::string read(const double timeout) = 0;
 };
+
+
+typedef std::unique_ptr<LineComm> LineCommPtr;
 
 }
 

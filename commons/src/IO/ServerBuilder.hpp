@@ -16,7 +16,7 @@ public:
   ServerBuilder(const Net::Address& addr, Key key);
 
 private:
-  virtual LineComm buildImpl(void);
+  virtual LineCommPtr buildImpl(void);
 
   Net::Server s_;
   Key         key_;

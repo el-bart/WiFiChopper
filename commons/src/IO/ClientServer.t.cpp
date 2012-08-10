@@ -21,10 +21,10 @@ struct TestClass
     cb_( new ClientBuilder(addr_, key_) )
   { }
 
-  const Net::Address  addr_;
-  const LineComm::Key key_;
-  unique_ptr<Builder> sb_;
-  unique_ptr<Builder> cb_;
+  const Net::Address         addr_;
+  const LineCommNetwork::Key key_;
+  unique_ptr<Builder>        sb_;
+  unique_ptr<Builder>        cb_;
 };
 
 typedef tut::test_group<TestClass> factory;
@@ -51,10 +51,10 @@ template<>
 template<>
 void testObj::test<2>(void)
 {
-  LineComm c = cb_->build();
-  LineComm s = sb_->build();
-  c.send("test");
-  ensure_equals("invalid response", s.read(1.0), "test");
+  LineCommPtr c = cb_->build();
+  LineCommPtr s = sb_->build();
+  c->send("test");
+  ensure_equals("invalid response", s->read(1.0), "test");
 }
 
 } // namespace tut

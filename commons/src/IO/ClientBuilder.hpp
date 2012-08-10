@@ -15,7 +15,7 @@ public:
   ClientBuilder(const Net::Address& addr, Key key);
 
 private:
-  virtual LineComm buildImpl(void);
+  virtual LineCommPtr buildImpl(void);
 
   Net::Address addr_;
   Key          key_;

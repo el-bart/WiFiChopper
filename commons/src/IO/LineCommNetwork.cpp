@@ -1,7 +1,7 @@
 #include <string>
 #include <algorithm>
 
-#include "IO/LineComm.hpp"
+#include "IO/LineCommNetwork.hpp"
 #include "Crypto/Aes256.hpp"
 #include "Net/TextLineChannel.hpp"
 #include "Util/hex.hpp"
@@ -12,18 +12,18 @@ using namespace std;
 namespace IO
 {
 
-LineComm::Key::Key(void):
+LineCommNetwork::Key::Key(void):
   Crypto::BinData( Crypto::Aes256::keySize() )
 { }
 
 
-LineComm::LineComm(Net::Channel chn, Key key):
+LineCommNetwork::LineCommNetwork(Net::Channel chn, Key key):
   crypt_( new Crypto::Aes256( std::move(key) ) ),
   comm_( new Net::TextLineChannel( std::move(chn) ) )
 { }
 
 
-void LineComm::send(const std::string& line)
+void LineCommNetwork::send(const std::string& line)
 {
   // encrypt input data
   Crypto::Algo::Data data( line.begin(), line.end() );
@@ -35,7 +35,7 @@ void LineComm::send(const std::string& line)
 }
 
 
-std::string LineComm::read(const double timeout)
+std::string LineCommNetwork::read(const double timeout)
 {
   // read encrypted message
   string encStr = comm_->read(timeout);

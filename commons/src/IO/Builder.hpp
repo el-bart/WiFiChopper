@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-#include "IO/LineComm.hpp"
+#include "IO/LineCommNetwork.hpp"
 
 
 namespace IO
@@ -12,14 +12,14 @@ namespace IO
 class Builder
 {
 public:
-  typedef LineComm::Key Key;
+  typedef LineCommNetwork::Key Key;
 
   virtual ~Builder(void) { }
 
-  LineComm build(void) { return buildImpl(); }
+  LineCommPtr build(void) { return buildImpl(); }
 
 private:
-  virtual LineComm buildImpl(void) = 0;
+  virtual LineCommPtr buildImpl(void) = 0;
 };
 
 }

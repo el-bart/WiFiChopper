@@ -10,9 +10,9 @@ ServerBuilder::ServerBuilder(const Net::Address& addr, Key key):
 {
 }
 
-LineComm ServerBuilder::buildImpl(void)
+LineCommPtr ServerBuilder::buildImpl(void)
 {
-  return LineComm( s_.accept(), key_ );
+  return LineCommPtr( new LineCommNetwork( s_.accept(), key_ ) );
 }
 
 }
