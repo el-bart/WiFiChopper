@@ -84,8 +84,9 @@ void TextLineUart::configure(void)
   tcgetattr(fd_.get(), &port_settings);                 // read current config
 
   // speed setup
-  cfsetispeed(&port_settings, B38400);
-  cfsetospeed(&port_settings, B38400);
+  constexpr auto spd = B38400;
+  cfsetispeed(&port_settings, spd);
+  cfsetospeed(&port_settings, spd);
 
   // mode: set no parity, stop bits, data bits
   port_settings.c_cflag &= ~PARENB;
