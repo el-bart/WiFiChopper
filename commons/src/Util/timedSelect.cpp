@@ -1,11 +1,12 @@
+#include <cmath>
 #include <sys/select.h>
 
-#include "Net/timedSelect.hpp"
+#include "Util/timedSelect.hpp"
 
-namespace Net
+namespace Util
 {
 
-bool timedSelect(const Address &addr, const int fd, const double timeout)
+bool timedSelect(const int fd, const double timeout, std::function<void(void)> onError)
 {
   const long     sec  = static_cast<long>( floor(timeout) );
   const long     usec = static_cast<long>( (timeout-sec)*1000*1000 );
@@ -17,7 +18,10 @@ bool timedSelect(const Address &addr, const int fd, const double timeout)
   // and wait...
   const int ret = select( fd+1, &rfds, nullptr, nullptr, &tv );
   if( ret==-1 )
-    throw CallError( addr, "select" );
+  {
+    onError();
+    return false;   // this line should not be reached
+  }
   // return info if timeout has occured or not
   return ret!=0;
 }
