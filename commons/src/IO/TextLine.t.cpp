@@ -3,6 +3,7 @@
 #include <memory>
 #include <iterator>
 #include <algorithm>
+#include <cassert>
 #include <unistd.h>
 
 #include "IO/TextLine.hpp"
@@ -19,12 +20,12 @@ struct TestLine: public TextLine
     TextLine(maxLineLen)
   { }
 
-  virtual size_t sendSome(const uint8_t *data, const size_t size)
+  virtual size_t sendSome(const Data& data, const size_t skip)
   {
     ++sentCount_;
-    const size_t len = min(maxSend_, size);
-    sent_.reserve( sent_.size() + len );
-    copy( data, data+len, back_insert_iterator<Data>(sent_) );
+    const size_t len = min( maxSend_, data.size()-skip );
+    assert( skip+len <= data.size() );
+    copy( data.begin()+skip, data.begin()+skip+len, back_insert_iterator<Data>(sent_) );
     return len;
   }
 
@@ -248,6 +249,28 @@ void testObj::test<14>(void)
   // finish text
   addToRecvBuffer("\n");
   testRecv(0.001, "some test");
+}
+
+// test sending and receiving line
+template<>
+template<>
+void testObj::test<15>(void)
+{
+  tl_.send("doom");
+  swap(tl_.sent_, tl_.recv_);
+  ensure_equals("invalid string received", tl_.read(1.0), "doom");
+}
+
+// test sending multiple times and then receiving lines
+template<>
+template<>
+void testObj::test<16>(void)
+{
+  tl_.send("doom");
+  tl_.send("quake");
+  swap(tl_.sent_, tl_.recv_);
+  ensure_equals("invalid string received /1", tl_.read(1.0), "doom" );
+  ensure_equals("invalid string received /2", tl_.read(1.0), "quake");
 }
 
 } // namespace tut

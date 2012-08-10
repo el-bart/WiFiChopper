@@ -15,14 +15,12 @@ namespace IO
 namespace
 {
 
-constexpr uint8_t g_eol[] = {'\n'};
-
 template<typename Iter>
-Iter findEOL(const Iter begin, const Iter end)
+Iter findEOL(const Iter begin, const Iter end, const TextLine::Data& eol)
 {
   // look for the end of line
   for(Iter it=begin; it!=end; ++it)
-    if( *it == g_eol[0] )
+    if( *it == eol[0] )
       return it;
   // EOL not found
   return end;
@@ -33,6 +31,7 @@ Iter findEOL(const Iter begin, const Iter end)
 
 
 TextLine::TextLine(const size_t maxLineLen):
+  eol_{'\n'},
   maxLineLen_(maxLineLen)
 { }
 
@@ -44,15 +43,22 @@ void TextLine::send(const Data& data)
   size_t left = data.size();
   while(left>0)
   {
-    const size_t bytes = sendSome(data.data()+done, left);
+    assert( done < data.size() );
+    const size_t bytes = sendSome(data, done);
     done += bytes;
     left -= bytes;
   }
 
   // send eol
-  const size_t eolSize = Util::tabSize(g_eol);
-  if( sendSome(g_eol, eolSize) != eolSize )
+  if( sendSome(eol_) != eol_.size() )
     throw SendError("unable to send EOL mark");
+}
+
+
+void TextLine::send(const std::string& line)
+{
+  const Data data( line.begin(), line.end() );
+  send(data);
 }
 
 
@@ -66,7 +72,7 @@ void TextLine::read(Data& data, const double timeout)
   {
     // check for the EOL within the buffer
     // TODO: this find can be optimized by adding offset, to skip parts that have been already checked in the previous iteration(s)
-    const Data::iterator it = findEOL( buf_.begin(), buf_.end() );
+    const Data::iterator it = findEOL( buf_.begin(), buf_.end(), eol_ );
     if( it!=buf_.end() )                // got it?
     {
       const size_t len = it - buf_.begin();
@@ -96,6 +102,16 @@ void TextLine::read(Data& data, const double timeout)
 
   // this code is never reached
   assert(!"we never reach here");
+}
+
+
+std::string TextLine::read(const double timeout)
+{
+  Data out;
+  read(out, timeout);
+  string line;
+  copy( out.begin(), out.end(), back_insert_iterator<string>(line) );
+  return line;
 }
 
 }

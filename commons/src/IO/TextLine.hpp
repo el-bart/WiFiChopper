@@ -1,6 +1,7 @@
 #ifndef INCLUDE_IO_TEXTLINE_HPP_FILE
 #define INCLUDE_IO_TEXTLINE_HPP_FILE
 
+#include <string>
 #include <vector>
 #include <algorithm>
 #include <inttypes.h>
@@ -48,13 +49,24 @@ public:
   explicit TextLine(size_t maxLineLen=4*1024);
   virtual ~TextLine(void) { }
 
+  // noncopyable:
+  TextLine(const TextLine&) = delete;
+  TextLine& operator=(const TextLine&) = delete;
+  // nonmovable:
+  TextLine(TextLine&&) = delete;
+  TextLine& operator=(TextLine&&) = delete;
+
   void send(const Data& data);
+  void send(const std::string& line);
+
   void read(Data& data, double timeout);
+  std::string read(double timeout);
 
 private:
-  virtual size_t sendSome(const uint8_t *data, size_t size) = 0;
+  virtual size_t sendSome(const Data& data, size_t skip = 0) = 0;
   virtual size_t readSome(Data& data, double timeout) = 0;
 
+  Data   eol_;
   Data   buf_;
   size_t maxLineLen_;
 };
