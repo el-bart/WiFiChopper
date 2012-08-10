@@ -1,3 +1,5 @@
+#include <iterator>
+#include <algorithm>
 #include <cstring>
 #include <cerrno>
 #include <sys/types.h>
@@ -8,6 +10,8 @@
 #include "IO/TextLineUart.hpp"
 #include "Util/tabSize.hpp"
 #include "Util/ErrStrm.hpp"
+
+using namespace std;
 
 
 namespace IO
@@ -34,7 +38,7 @@ TextLineUart::TextLineUart(const std::string& dev):
 
 size_t TextLineUart::sendSome(const Data& data, const size_t skip)
 {
-  const int ret = write( fd_.get(), data.data()+skip, data.size()-skip );
+  const int ret = ::write( fd_.get(), data.data()+skip, data.size()-skip );
   if( ret == -1 )
     throw ErrorIO(dev_, "syscall write() failed");
   return ret;
@@ -45,7 +49,7 @@ size_t TextLineUart::readSome(Data& data, const double timeout)
 {
   // try read some data
   uint8_t   buf[1024];
-  const int ret = read( fd_.get(), buf, Util::tabSize(buf) );
+  const int ret = ::read( fd_.get(), buf, Util::tabSize(buf) );
   if( ret == -1 )
     throw ErrorIO(dev_, "syscall read() failed");
   // copy data to output buffer
