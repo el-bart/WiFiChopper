@@ -21,6 +21,13 @@ Channel connectToServer(const Address& addr)
   sAddr.sin_port        = htons(addr.port_);
   sAddr.sin_addr.s_addr = addr.ip_.toInAddr();
 
+  // turns on keep alive messages
+  {
+    const int value = 1;
+    if( setsockopt( sock.get(), SOL_SOCKET, SO_REUSEADDR, &value, sizeof(value) ) == -1 )
+      throw CallError(addr, "setsockopt");
+  }
+
   // connect to remove host via socket
   if( connect( sock.get(), reinterpret_cast<const sockaddr*>(&sAddr), sizeof(sAddr) ) == -1 )
     throw CallError(addr, "connect");

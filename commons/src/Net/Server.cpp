@@ -47,6 +47,20 @@ Util::UniqueDescriptor Server::openSocket(void) const
   sAddr.sin_port        = htons(addr_.port_);
   sAddr.sin_addr.s_addr = addr_.ip_.toInAddr();
 
+  // prevent isses with socket being already busy
+  {
+    const int value = 1;
+    if( setsockopt( sock.get(), SOL_SOCKET, SO_REUSEADDR, &value, sizeof(value) ) == -1 )
+      throw CallError(addr_, "setsockopt");
+  }
+
+  // turns on keep alive messages
+  {
+    const int value = 1;
+    if( setsockopt( sock.get(), SOL_SOCKET, SO_REUSEADDR, &value, sizeof(value) ) == -1 )
+      throw CallError(addr_, "setsockopt");
+  }
+
   // bind to socket to address
   if( bind( sock.get(), reinterpret_cast<struct sockaddr*>(&sAddr), sizeof(sAddr) ) == -1 )
     throw CallError(addr_, "bind");
