@@ -23,7 +23,7 @@ define run-in-gen
 	@echo
 	@echo "##### build $@"
 	mkdir -p "$(GENDIR)/$@" \
-	          `find . -type d | grep -v './\.' | \
+	          `find . -follow -type d | grep -v './\.' | \
 	          grep -v '^\./gen/' | grep -v '^\./gen$$' | \
 			  grep -v '^\.$$' | sed 's:^\./:$(GENDIR)/$@/:'`
 	+$(MAKE) $(MFLAGS) -C "$(GENDIR)/$@" -f "$(CURDIR)/Makefile" \
@@ -41,15 +41,15 @@ VPATH+=$(SRCDIR)
 export GENDIR SRCDIR VPATH
 
 
-CXXTESTSRCS:=$(shell find . -iname '*.t.cpp')
-CTESTSRCS  :=$(shell find . -iname '*.t.c'  )
+CXXTESTSRCS:=$(shell find . -follow -iname '*.t.cpp')
+CTESTSRCS  :=$(shell find . -follow -iname '*.t.c'  )
 export CTESTSRCS CXXTESTSRCS
-CXXMTESTSRCS:=$(shell find . -iname '*.mt.cpp')
-CMTESTSRCS  :=$(shell find . -iname '*.mt.c'  )
+CXXMTESTSRCS:=$(shell find . -follow -iname '*.mt.cpp')
+CMTESTSRCS  :=$(shell find . -follow -iname '*.mt.c'  )
 export CMTESTSRCS CXXMTESTSRCS
 
-CXXSRCS:=$(filter-out $(CXXTESTSRCS) $(CXXMTESTSRCS), $(shell find . -iname '*.cpp'))
-CSRCS  :=$(filter-out $(CTESTSRCS)   $(CMTESTSRCS),   $(shell find . -iname '*.c'  ))
+CXXSRCS:=$(filter-out $(CXXTESTSRCS) $(CXXMTESTSRCS), $(shell find . -follow -iname '*.cpp'))
+CSRCS  :=$(filter-out $(CTESTSRCS)   $(CMTESTSRCS),   $(shell find . -follow -iname '*.c'  ))
 export CSRCS CXXSRCS
 
 CXXSRCS_NOMAIN:=$(shell echo $(CXXSRCS) | xargs -r grep -L '^int main')
@@ -74,7 +74,7 @@ TEST_PROGRAM_NAME=$(PROGRAM_NAME).t
 export TEST_PROGRAM_NAME
 
 .PHONY: all
-all: debug
+all: release
 
 .PHONY: debug
 debug: CFLAGS+=-g3
@@ -154,15 +154,15 @@ mtest: $(CMTESTOUTS) $(CXXMTESTOUTS)
 
 $(TEST_PROGRAM_NAME): $(CXXTESTOBJS) $(CTESTOBJS) $(CXXOBJS_NOMAIN) $(COBJS_NOMAIN)
 	echo "LD  $@"
-	$(LD) $(LDFLAGS) -o $@ $^
+	$(CXX) $(LDFLAGS) -o $@ $^
 
 %.out: $(CXXOBJS_NOMAIN) $(COBJS_NOMAIN) %.o
 	echo "LD  $@"
-	$(LD) $(LDFLAGS) -o $@ $^
+	$(CXX) $(LDFLAGS) -o $@ $^
 
 $(PROGRAM_NAME): $(CXXOBJS) $(COBJS)
 	echo "LD  $@"
-	$(LD) $(LDFLAGS) -o $@ $^
+	$(CXX) $(LDFLAGS) -o $@ $^
 
 # C++ source files:
 %.o: %.cpp $(SRCDIR)/Makefile
