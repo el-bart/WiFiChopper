@@ -27,6 +27,12 @@ int main(int argc, char **argv)
     // TODO: actions here:
     remote->send("hello");
     cout << "> " << remote->read(2.0) << endl;
+    remote->send("accel?");
+    cout << "> " << remote->read(2.0) << endl;
+    remote->send("vin?");
+    cout << "> " << remote->read(2.0) << endl;
+    remote->send("eng?");
+    cout << "> " << remote->read(2.0) << endl;
 
     cout << argv[0] << "exiting..." << endl;
     return 0;
