@@ -23,8 +23,8 @@ public:
 
   LineComm(Net::Channel chn, Key key);
 
-  void sendLine(const std::string& line);
-  std::string readLine(const double timeout);
+  void send(const std::string& line);
+  std::string read(const double timeout);
 
 private:
   std::unique_ptr<Crypto::Algo> crypt_;

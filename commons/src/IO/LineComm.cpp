@@ -23,7 +23,7 @@ LineComm::LineComm(Net::Channel chn, Key key):
 { }
 
 
-void LineComm::sendLine(const std::string& line)
+void LineComm::send(const std::string& line)
 {
   // encrypt input data
   Crypto::Algo::Data data( line.begin(), line.end() );
@@ -35,7 +35,7 @@ void LineComm::sendLine(const std::string& line)
 }
 
 
-std::string LineComm::readLine(const double timeout)
+std::string LineComm::read(const double timeout)
 {
   // read encrypted message
   string encStr = comm_->read(timeout);
