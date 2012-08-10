@@ -34,6 +34,8 @@ struct TestLine: public TextLine
   {
     ++recvCount_;
     const size_t len = min( recv_.size(), maxRecv_ );
+    if( len==0 )
+      throw Timeout();
     copy( begin(recv_), begin(recv_)+len, back_insert_iterator<Data>(data) );
     recv_.erase( begin(recv_), begin(recv_)+len );
     return len;

@@ -96,8 +96,9 @@ void TextLine::read(Data& data, const double timeout)
     else
       firstRun = false;
 
-    // try reading some more data
-    readSome( buf_, tout.remaining() );
+    // try reading some more data - read==0 means error
+    if( readSome( buf_, tout.remaining() ) == 0 )
+      throw ReadError("0 bytes read");
   }
 
   // this code is never reached

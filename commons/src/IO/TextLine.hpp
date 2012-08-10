@@ -36,10 +36,10 @@ public:
     { }
   };
 
-  struct ParameterError: public Exception
+  struct ReadError: public Exception
   {
-    explicit ParameterError(std::string details):
-      Exception("invalid parameter: " + std::move(details))
+    explicit ReadError(std::string details):
+      Exception("unable to read data: " + std::move(details))
     { }
   };
 

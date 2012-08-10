@@ -10,10 +10,34 @@
 using namespace std;
 
 
+void resetDevicseBuffer(const char* procName, IO::LineComm& dev)
+{
+  cout << procName << ": uC's buffer cleanup" << endl;
+  dev.send("");         // send new line to flush uC's internal buffer
+  try
+  {
+    while(true)
+      dev.read(0.2);    // discard what is being read
+  }
+  catch(const IO::TextLineUart::Timeout&)
+  {
+    // timeout means buffer is clean and we may finish
+    cout << procName << ": buffer cleanup done!" << endl;
+  }
+  catch(const std::exception& ex)
+  {
+    cerr << procName << ": unexpected error during device buffer cleaning: " << ex.what() << " - trying to proceed any way..." << endl;
+  }
+}
+
+
 void handleClient(const char* procName, IO::LineComm& remote, IO::LineComm& dev)
 {
   try
   {
+    // cleanup any mess, that might be there
+    resetDevicseBuffer(procName, dev);
+
     // client processing loop
     while(true)
     {
