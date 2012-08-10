@@ -12,13 +12,19 @@ namespace Net
 
 struct Exception: public std::runtime_error
 {
-  explicit Exception(std::string details):
-    std::runtime_error( "network error: " + details )
-  { }
+  explicit Exception(std::string details);
+  Exception(const Address &addr, std::string details);
+};
 
-  Exception(const Address &addr, std::string details):
-    std::runtime_error( (Util::ErrStrm{}<<"network error while talking with "<<addr<<" - "<<details).str().c_str() )
-  { }
+
+struct CallError: public Exception
+{
+  CallError(const Address &addr, const char *call);
+};
+
+struct Timeout: public Exception
+{
+  Timeout(const Address &addr);
 };
 
 }

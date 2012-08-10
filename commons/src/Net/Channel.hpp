@@ -24,19 +24,6 @@ public:
     { }
   };
 
-  struct CallError: public Exception
-  {
-    CallError(const Address &addr, const char *call);
-  };
-
-  struct Timeout: public Exception
-  {
-    Timeout(const Address &addr):
-      Exception(addr, (Util::ErrStrm{}<<"timeout occured while waiting for data from "<<addr).str().c_str() )
-    { }
-  };
-
-
   typedef std::vector<uint8_t> Data;
 
   Channel(Address addr, Util::UniqueDescriptor sock);

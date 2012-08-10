@@ -6,16 +6,12 @@
 #include <sys/select.h>
 
 #include "Net/Channel.hpp"
+#include "Net/timedSelect.hpp"
 #include "Util/TimeoutClock.hpp"
 #include "Util/tabSize.hpp"
 
 namespace Net
 {
-
-Channel::CallError::CallError(const Address &addr, const char *call):
-  Exception(addr, (Util::ErrStrm{}<<"error calling "<<call<<"(), on "<<addr<<" - "<<strerror(errno)).str().c_str() )
-{ }
-
 
 Channel::Channel(Address addr, Util::UniqueDescriptor sock):
   addr_( std::move(addr) ),
@@ -45,7 +41,8 @@ void Channel::read(Data &out, const double timeout)
 {
   // wait...
   const Util::TimeoutClock tout(timeout);
-  waitForData( tout.remaining() );
+  if( !timedSelect( addr_, sock_.get(), tout.remaining() ) )
+    throw Timeout(addr_);
   // ok - we have some data
   uint8_t buf[8*1024];
   const int cnt = ::read( sock_.get(), buf, Util::tabSize(buf) );
@@ -54,25 +51,6 @@ void Channel::read(Data &out, const double timeout)
   // copy to the output buffer
   out.reserve( out.size() + cnt );
   copy( buf, buf+cnt, std::back_insert_iterator<Data>(out) );
-}
-
-
-void Channel::waitForData(double timeout) const
-{
-  const long     sec  = static_cast<long>( floor(timeout) );
-  const long     usec = static_cast<long>( (timeout-sec)*1000*1000 );
-  struct timeval tv   = { sec, usec };
-  // select proper descriptor
-  fd_set rfds;
-  FD_ZERO(&rfds);
-  FD_SET(sock_.get(), &rfds);
-  // and wait...
-  const int ret = select( sock_.get()+1, &rfds, nullptr, nullptr, &tv );
-  if( ret==-1 )
-    throw CallError(addr_, "select");
-  if( ret==0 )
-    throw Timeout(addr_);
-  // ok - we have some new data!
 }
 
 }
