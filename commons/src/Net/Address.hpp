@@ -1,23 +1,40 @@
 #ifndef INCLUDE_NET_ADDRESS_HPP_FILE
 #define INCLUDE_NET_ADDRESS_HPP_FILE
 
+#include <algorithm>
 #include <cinttypes>
+#include <cassert>
 
 #include "Util/tabSize.hpp"
+#include "Util/StrictWeakOrdering.hpp"
 
 
 namespace Net
 {
 
-struct IPv4
+struct IPv4: public Util::StrictWeakOrdering<IPv4>
 {
-  uint8_t addr_[4];
-};
+  IPv4(std::initializer_list<uint8_t> lst)
+  {
+    assert( lst.size()==Util::tabSize(addr_) && "invalid number of arguments" );
+    std::copy( lst.begin(), lst.end(), addr_ );
+  }
 
-struct Address
-{
-  IPv4     ip_;
-  uint16_t port_;
+  bool operator<(const IPv4& rhs) const
+  {
+    for(size_t i=0; i<Util::tabSize(addr_); ++i)
+    {
+      if( addr_[i] < rhs.addr_[i] )
+        return true;
+      if( addr_[i] == rhs.addr_[i] )
+        continue;
+      return false;
+    }
+    // all elements are equal
+    return false;
+  }
+
+  uint8_t addr_[4];
 };
 
 
@@ -36,39 +53,37 @@ S&& operator<<(S&& strm, const IPv4& ip)
   return strm;
 }
 
+
+
+struct Address: public Util::StrictWeakOrdering<Address>
+{
+  Address(const IPv4& ip, const uint16_t port):
+    ip_(ip),
+    port_(port)
+  { }
+
+  bool operator<(const Address& rhs) const
+  {
+    // ip is enough?
+    if( ip_<rhs.ip_ )
+      return true;
+    // IP is not equal?
+    if( rhs.ip_<ip_ )
+      return false;
+    // if IP is equal, compare by ports.
+    return port_<rhs.port_;
+  }
+
+  IPv4     ip_;
+  uint16_t port_;
+};
+
+
 template<typename S>
 S&& operator<<(S&& strm, const Address& addr)
 {
   strm << addr.ip_ << ':' << static_cast<int>(addr.port_);
   return strm;
-}
-
-
-inline bool operator<(const IPv4& lhs, const IPv4& rhs)
-{
-  for(size_t i=0; i<Util::tabSize(lhs.addr_); ++i)
-  {
-    if( lhs.addr_[i] < rhs.addr_[i] )
-      return true;
-    if( lhs.addr_[i] == rhs.addr_[i] )
-      continue;
-    return false;
-  }
-  // all elements are equal
-  return false;
-}
-
-
-inline bool operator<(const Address& lhs, const Address& rhs)
-{
-  // ip is enough?
-  if( lhs.ip_<rhs.ip_ )
-    return true;
-  // IP is not equal?
-  if( rhs.ip_<lhs.ip_ )
-    return false;
-  // if IP is equal, compare by ports.
-  return lhs.port_<rhs.port_;
 }
 
 }
