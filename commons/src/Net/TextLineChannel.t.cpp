@@ -1,28 +1,21 @@
 #include <tut/tut.hpp>
-#include <string>
-#include <iterator>
 #include <algorithm>
 
-#include "Net/Server.hpp"
-#include "Net/connectToServer.hpp"
 #include "Net/TextLineChannel.hpp"
+#include "Net/SocketPairHelper.t.hpp"
 
 using namespace std;
 using namespace Net;
 
 namespace
 {
-struct TestClass
+struct TestClass: public SocketPairHelper
 {
   TestClass(void):
-    addr_( {{127,0,0,1}}, 9666 ),
-    srvSock_(addr_),
-    txtCln_( connectToServer(addr_) ),
-    txtSrv_( srvSock_.accept() )
+    txtCln_( std::move(c1_) ),
+    txtSrv_( std::move(c2_) )
   { }
 
-  const Address   addr_;
-  Server          srvSock_;
   TextLineChannel txtCln_;
   TextLineChannel txtSrv_;
 };
