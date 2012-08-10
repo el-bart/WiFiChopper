@@ -24,15 +24,24 @@ int main(int argc, char **argv)
     cout << argv[0] << ": connecting to the server..." << endl;
     IO::LineCommPtr remote = builder->build();
 
+
     // TODO: actions here:
     remote->send("hello");
     cout << "> " << remote->read(2.0) << endl;
+
+    remote->send("hello");
+    cout << "> " << remote->read(2.0) << endl;
+
     remote->send("accel?");
     cout << "> " << remote->read(2.0) << endl;
+
     remote->send("vin?");
     cout << "> " << remote->read(2.0) << endl;
+
     remote->send("eng?");
     cout << "> " << remote->read(2.0) << endl;
+    // TODO: end
+
 
     cout << argv[0] << "exiting..." << endl;
     return 0;
