@@ -22,12 +22,19 @@ public:
     ErrorIO(const std::string& dev, const char* details);
   };
 
+  struct Timeout: public Exception
+  {
+    explicit Timeout(const std::string& dev);
+  };
+
 
   explicit TextLineUart(const std::string& dev);
 
 private:
   virtual size_t sendSome(const Data& data, size_t skip = 0);
   virtual size_t readSome(Data& data, double timeout);
+
+  void configure(void);
 
   std::string            dev_;
   Util::UniqueDescriptor fd_;
