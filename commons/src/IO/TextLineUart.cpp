@@ -59,7 +59,7 @@ size_t TextLineUart::readSome(Data& data, const double timeout)
 {
   // try reading data, if present
   if( !Util::timedSelect( fd_.get(), timeout, [this]{ throw ErrorIO(dev_, "syscall select() failed"); } ) )
-    throw ErrorIO(dev_, "timeout");
+    throw Timeout(dev_);
   // try read some data
   uint8_t   buf[1024];
   const int ret = ::read( fd_.get(), buf, Util::tabSize(buf) );
