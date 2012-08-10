@@ -112,4 +112,18 @@ void testObj::test<5>(void)
     ensure_equals("invalid element", int(t[i]), int(ip.addr_[i]) );
 }
 
+// test convertion from in_addr_t
+template<>
+template<>
+void testObj::test<6>(void)
+{
+  uint8_t   t[4] = {1,2,3,4};
+  in_addr_t in;
+  memcpy( &in, t, sizeof(in) );
+  const IPv4 ip(in);
+  // check the result
+  for(int i=0; i<4; ++i)
+    ensure_equals("invalid element", int(ip.addr_[i]), int(t[i]) );
+}
+
 } // namespace tut

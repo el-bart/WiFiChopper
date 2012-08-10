@@ -15,6 +15,8 @@ namespace Net
 
 struct IPv4: public Util::StrictWeakOrdering<IPv4>
 {
+  explicit IPv4(in_addr_t in);
+
   IPv4(std::initializer_list<uint8_t> lst)
   {
     assert( lst.size()==Util::tabSize(addr_) && "invalid number of arguments" );
