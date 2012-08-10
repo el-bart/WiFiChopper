@@ -21,7 +21,7 @@ public:
   };
 
 
-  LineComm(Net::Channel chn, Crypto::BinData key);
+  LineComm(Net::Channel chn, Key key);
 
   void sendLine(const std::string& line);
   std::string readLine(const double timeout);

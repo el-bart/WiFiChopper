@@ -17,7 +17,7 @@ LineComm::Key::Key(void):
 { }
 
 
-LineComm::LineComm(Net::Channel chn, Crypto::BinData key):
+LineComm::LineComm(Net::Channel chn, Key key):
   crypt_( new Crypto::Aes256( std::move(key) ) ),
   comm_( new Net::TextLineChannel( std::move(chn) ) )
 { }
