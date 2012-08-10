@@ -38,7 +38,10 @@ void testObj::test<2>(void)
 {
   BinData bd1(42);
   BinData bd2( std::move(bd1) );
-  ensure_equals("invalid size", bd2.size(), 42);
+  ensure_equals("invalid size /1", bd2.size(), 42);
+  BinData bd3(66);
+  bd3 = std::move(bd2);
+  ensure_equals("invalid size /2", bd3.size(), 42);
 }
 
 // test modifications
@@ -51,6 +54,19 @@ void testObj::test<3>(void)
   ensure_equals("invalid byte 1", bd.data()[0], 'a');
   ensure_equals("invalid byte 2", bd.data()[1], 'b');
   ensure_equals("invalid byte 3", bd.data()[2], 'c');
+}
+
+// test copyability
+template<>
+template<>
+void testObj::test<4>(void)
+{
+  BinData bd1(42);
+  BinData bd2(bd1);
+  ensure_equals("invalid size /1", bd2.size(), 42);
+  BinData bd3(66);
+  bd3 = bd2;
+  ensure_equals("invalid size /2", bd3.size(), 42);
 }
 
 } // namespace tut
