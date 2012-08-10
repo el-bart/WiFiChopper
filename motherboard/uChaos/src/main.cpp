@@ -1,10 +1,6 @@
 #include <iostream>
-#include <algorithm>
 #include <stdexcept>
-#include <cstdlib>
 
-#include "Util/ErrStrm.hpp"
-#include "Util/readWholeFile.hpp"
 #include "IO/LineCommUart.hpp"
 #include "IO/LineCommNetwork.hpp"
 #include "IO/ServerBuilder.hpp"
@@ -47,11 +43,11 @@ int main(int argc, char **argv)
 
   try
   {
-    cout << argv[0] << ": uChaos is initializing..." << endl;
+    cout << argv[0] << ": uChaos server is initializing..." << endl;
     IO::BuilderPtr  builder( new IO::ServerBuilder( Net::parseAddress(argv[1], argv[2]), Crypto::readKeyFromFile(argv[3]) ) );
     IO::LineCommPtr dev( new IO::LineCommUart(argv[4]) );
 
-    // main client loop
+    // main client-processing loop
     while(true)
     {
       cout << argv[0] << ": waiting for new client" << endl;
