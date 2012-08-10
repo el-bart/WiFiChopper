@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cinttypes>
 #include <cassert>
+#include <netinet/in.h>
 
 #include "Util/tabSize.hpp"
 #include "Util/StrictWeakOrdering.hpp"
@@ -33,6 +34,8 @@ struct IPv4: public Util::StrictWeakOrdering<IPv4>
     // all elements are equal
     return false;
   }
+
+  in_addr_t toInAddr(void) const;
 
   uint8_t addr_[4];
 };

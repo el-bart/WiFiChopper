@@ -1,5 +1,5 @@
-#include <sstream>
 #include <tut/tut.hpp>
+#include <cstring>
 
 #include "Net/Address.hpp"
 
@@ -96,6 +96,20 @@ void testObj::test<4>(void)
 
   // equality
   ensure("relation 9 failes", !(a1<a1));
+}
+
+// test convertion toInAddr
+template<>
+template<>
+void testObj::test<5>(void)
+{
+  const IPv4      ip   = {{1,2,3,4}};
+  const in_addr_t out  = ip.toInAddr();
+  // check the result
+  uint8_t t[4];
+  memcpy( t, &out, sizeof(out) );
+  for(int i=0; i<4; ++i)
+    ensure_equals("invalid element", int(t[i]), int(ip.addr_[i]) );
 }
 
 } // namespace tut
