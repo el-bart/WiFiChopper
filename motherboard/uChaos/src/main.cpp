@@ -8,18 +8,10 @@
 #include "IO/LineCommUart.hpp"
 #include "IO/LineCommNetwork.hpp"
 #include "IO/ServerBuilder.hpp"
-#include "Net/Resolver.hpp"
+#include "Net/parseAddress.hpp"
 #include "Crypto/readKeyFromFile.hpp"
 
 using namespace std;
-
-
-Net::Address parseAddress(const char* hostStr, const char* portStr)
-{
-  const Net::Resolver resolver(hostStr);
-  const uint16_t      port = atoi(portStr);
-  return Net::Address( resolver[0], port );
-}
 
 
 void handleClient(const char* procName, IO::LineComm& remote, IO::LineComm& dev)
@@ -56,7 +48,7 @@ int main(int argc, char **argv)
   try
   {
     cout << argv[0] << ": uChaos is initializing..." << endl;
-    IO::BuilderPtr  builder( new IO::ServerBuilder( parseAddress(argv[1], argv[2]), Crypto::readKeyFromFile(argv[3]) ) );
+    IO::BuilderPtr  builder( new IO::ServerBuilder( Net::parseAddress(argv[1], argv[2]), Crypto::readKeyFromFile(argv[3]) ) );
     IO::LineCommPtr dev( new IO::LineCommUart(argv[4]) );
 
     // main client loop
