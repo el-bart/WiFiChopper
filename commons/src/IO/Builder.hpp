@@ -1,6 +1,7 @@
 #ifndef INCLUDE_IO_BUILDER_HPP_FILE
 #define INCLUDE_IO_BUILDER_HPP_FILE
 
+#include <memory>
 #include <algorithm>
 
 #include "IO/LineCommNetwork.hpp"
@@ -21,6 +22,9 @@ public:
 private:
   virtual LineCommPtr buildImpl(void) = 0;
 };
+
+
+typedef std::unique_ptr<Builder> BuilderPtr;
 
 }
 
