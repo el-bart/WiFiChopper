@@ -1,0 +1,5 @@
+specs
+=====
+
+while engines are off and CPUs are not busy device takes 270mA. when CPUs are busy, power
+consumption goes up to about 350-400mA.
