@@ -9,22 +9,9 @@
 #include "IO/LineCommNetwork.hpp"
 #include "IO/ServerBuilder.hpp"
 #include "Net/Resolver.hpp"
+#include "Crypto/readKeyFromFile.hpp"
 
 using namespace std;
-
-
-IO::LineCommNetwork::Key keyFromFile(const std::string& path)
-{
-  // read file
-  vector<uint8_t> keyData = Util::readWholeFile(path);
-  IO::LineCommNetwork::Key key;
-  // check if sizes do match
-  if( keyData.size() != key.size() )
-    throw std::runtime_error( (Util::ErrStrm{}<<"key must be exactly "<<key.size()<<" bytes long").str().c_str() );
-  // copy to the final destination
-  copy( keyData.begin(), keyData.end(), key.data() );
-  return key;
-}
 
 
 Net::Address parseAddress(const char* hostStr, const char* portStr)
@@ -69,7 +56,7 @@ int main(int argc, char **argv)
   try
   {
     cout << argv[0] << ": uChaos is initializing..." << endl;
-    IO::BuilderPtr  builder( new IO::ServerBuilder( parseAddress(argv[1], argv[2]), keyFromFile(argv[3]) ) );
+    IO::BuilderPtr  builder( new IO::ServerBuilder( parseAddress(argv[1], argv[2]), Crypto::readKeyFromFile(argv[3]) ) );
     IO::LineCommPtr dev( new IO::LineCommUart(argv[4]) );
 
     // main client loop
