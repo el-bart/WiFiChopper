@@ -3,7 +3,7 @@
 
 #include "Util/ErrStrm.hpp"
 
-#define UTIL_LOCSTRM (Util::ErrStrm{}<<__FILE__<<":"<<__LINE__)
+#define UTIL_LOCSTRM (Util::ErrStrm{}<<__FILE__<<":"<<__LINE__<<" "<<__FUNCTION__<<"(): ")
 #define UTIL_LOCSTR  (UTIL_LOCSTRM.str())
 
 #endif
