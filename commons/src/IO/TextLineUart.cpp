@@ -82,16 +82,16 @@ void TextLineUart::configure(void)
   struct termios port_settings;
   memset(&port_settings, 0, sizeof(port_settings));
 
-  // speed setup
-  constexpr auto spd = B38400;
-  cfsetispeed(&port_settings, spd);
-  cfsetospeed(&port_settings, spd);
-
   // mode: set no parity, stop bits, data bits
   port_settings.c_iflag = IGNBRK;               // input flags
   port_settings.c_oflag = 0;                    // output flags
   port_settings.c_cflag = CREAD | CS8 | CLOCAL; // control flags
   port_settings.c_lflag = 0;                    // noncannonical mode, no echo...
+
+  // speed setup
+  constexpr auto spd = B38400;
+  cfsetispeed(&port_settings, spd);             // in
+  cfsetospeed(&port_settings, spd);             // out
 
   tcflush(fd_.get(), TCIOFLUSH);                // flush data not yet sent/received
 
