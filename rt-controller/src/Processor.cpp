@@ -100,7 +100,7 @@ void Processor::process(char *buf, const AdcReadsWrapper::Reads &reads)
 
   // sanity check
   const char *cmd=tokenizer.getNextToken();
-  if(cmd==NULL)
+  if(cmd==nullptr)
   {
     errorFlash( PSTR("no cmd") );
     return;

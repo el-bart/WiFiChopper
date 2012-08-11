@@ -1,5 +1,6 @@
 #include "config.hpp"       // this file must be included as first one!
 #include <avr/io.h>
+#include <avr/interrupt.h>
 
 #include "USART.hpp"
 #include "Watchdog.hpp"
@@ -12,15 +13,16 @@
 //
 int main(void)
 {
-  Watchdog        wdg;          // prepare watchdog for work (keep this object as the first one to init!)
-  wdg.enable();                 // enable watchdog
+  Watchdog        wdg;      // prepare watchdog for work (keep this object as the first one to init!)
+  wdg.enable();             // enable watchdog
   wdg.reset();
-  AdcReadsWrapper adc;          // A/D converter with wrapped reads
+  AdcReadsWrapper adc;      // A/D converter with wrapped reads
   wdg.reset();
-  USART::init();                // configure serial interface
+  USART::init();            // configure serial interface
   wdg.reset();
-  Input           input;        // input data collect-and-response facility
+  Input           input;    // input data collect-and-response facility
   wdg.reset();
+  sei();                    // enable interrupts
 
   // main loop (never ending)
   while(true)
