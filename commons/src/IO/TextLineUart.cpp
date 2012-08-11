@@ -81,7 +81,6 @@ void TextLineUart::configure(void)
   // reset content of the configuration and readcurrent one
   struct termios port_settings;
   memset(&port_settings, 0, sizeof(port_settings));
-  tcgetattr(fd_.get(), &port_settings);                 // read current config
 
   // speed setup
   constexpr auto spd = B38400;
@@ -89,10 +88,12 @@ void TextLineUart::configure(void)
   cfsetospeed(&port_settings, spd);
 
   // mode: set no parity, stop bits, data bits
-  port_settings.c_cflag &= ~PARENB;
-  port_settings.c_cflag &= ~CSTOPB;
-  port_settings.c_cflag &= ~CSIZE;
-  port_settings.c_cflag |= CS8;
+  port_settings.c_iflag = IGNBRK;               // input flags
+  port_settings.c_oflag = 0;                    // output flags
+  port_settings.c_cflag = CREAD | CS8 | CLOCAL; // control flags
+  port_settings.c_lflag = 0;                    // noncannonical mode, no echo...
+
+  tcflush(fd_.get(), TCIOFLUSH);                // flush data not yet sent/received
 
   // apply setting to the port
   if( tcsetattr(fd_.get(), TCSANOW, &port_settings) == -1 ) // apply the settings to the port
