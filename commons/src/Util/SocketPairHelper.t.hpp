@@ -1,11 +1,9 @@
-#ifndef INCLUDE_NET_SOCKETPAIRHELPER_T_HPP_FILE
-#define INCLUDE_NET_SOCKETPAIRHELPER_T_HPP_FILE
+#ifndef INCLUDE_UTIL_SOCKETPAIRHELPER_T_HPP_FILE
+#define INCLUDE_UTIL_SOCKETPAIRHELPER_T_HPP_FILE
 
 #include <tut/tut.hpp>
 #include <sys/types.h>
 #include <sys/socket.h>
-
-#include "Net/Channel.hpp"
 
 namespace
 {
@@ -14,8 +12,8 @@ struct SocketPairHelper
 {
   SocketPairHelper(void):
     // NOTE: this is secure, since UniqueDescriptor's c-tor cannot throw
-    c1_( {{{1,2,3,4}}, 4242}, Util::UniqueDescriptor{sp_.sp_[0]} ),
-    c2_( {{{1,2,3,5}}, 4243}, Util::UniqueDescriptor{sp_.sp_[1]} )
+    d1_( Util::UniqueDescriptor{sp_.sp_[0]} ),
+    d2_( Util::UniqueDescriptor{sp_.sp_[1]} )
   { }
 
 private:
@@ -33,8 +31,8 @@ private:
   Init sp_;
 
 public:
-  Net::Channel c1_;
-  Net::Channel c2_;
+  Util::UniqueDescriptor d1_;
+  Util::UniqueDescriptor d2_;
 };
 
 }

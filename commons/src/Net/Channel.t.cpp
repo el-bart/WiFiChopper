@@ -2,7 +2,7 @@
 #include <algorithm>
 
 #include "Net/Channel.hpp"
-#include "Net/SocketPairHelper.t.hpp"
+#include "Net/ChannelPairHelper.t.hpp"
 
 using namespace std;
 using namespace Net;
@@ -10,7 +10,7 @@ using namespace Net;
 namespace
 {
 
-struct TestClass: public SocketPairHelper
+struct TestClass: public ChannelPairHelper
 {
 };
 

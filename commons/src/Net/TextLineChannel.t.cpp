@@ -2,14 +2,14 @@
 #include <algorithm>
 
 #include "Net/TextLineChannel.hpp"
-#include "Net/SocketPairHelper.t.hpp"
+#include "Net/ChannelPairHelper.t.hpp"
 
 using namespace std;
 using namespace Net;
 
 namespace
 {
-struct TestClass: public SocketPairHelper
+struct TestClass: public ChannelPairHelper
 {
   TestClass(void):
     txtCln_( std::move(c1_) ),
