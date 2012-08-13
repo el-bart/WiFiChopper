@@ -58,7 +58,7 @@ size_t TextLineUart::sendSome(const Data& data, const size_t skip)
 size_t TextLineUart::readSome(Data& data, const double timeout)
 {
   // try reading data, if present
-  if( !Util::timedSelect( fd_.get(), timeout, [this]{ throw ErrorIO(dev_, "syscall select() failed"); } ) )
+  if( !Util::timedSelect( fd_.get(), timeout ) )
     throw Timeout(dev_);
   // try read some data
   uint8_t   buf[1024];

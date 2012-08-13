@@ -6,7 +6,7 @@
 #include <sys/select.h>
 
 #include "Net/Channel.hpp"
-#include "Net/timedSelect.hpp"
+#include "Util/timedSelect.hpp"
 #include "Util/TimeoutClock.hpp"
 #include "Util/tabSize.hpp"
 
@@ -41,7 +41,7 @@ void Channel::read(Data &out, const double timeout)
 {
   // wait...
   const Util::TimeoutClock tout(timeout);
-  if( !timedSelect( addr_, sock_.get(), tout.remaining() ) )
+  if( !Util::timedSelect( sock_.get(), tout.remaining() ) )
     throw Timeout(addr_);
   // ok - we have some data
   uint8_t buf[8*1024];
