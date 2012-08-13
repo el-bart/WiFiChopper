@@ -36,8 +36,10 @@ TextLine::TextLine(const size_t maxLineLen):
 { }
 
 
-void TextLine::send(const Data& data)
+void TextLine::send(const Data& dataIn)
 {
+  Data data(dataIn);
+  data.insert( data.end(), eol_.begin(), eol_.end() );  // append EOL symbol
   // send data
   size_t done = 0;
   size_t left = data.size();
@@ -48,10 +50,6 @@ void TextLine::send(const Data& data)
     done += bytes;
     left -= bytes;
   }
-
-  // send eol
-  if( sendSome(eol_) != eol_.size() )
-    throw SendError("unable to send EOL mark");
 }
 
 

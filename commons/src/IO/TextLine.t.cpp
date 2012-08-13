@@ -115,7 +115,7 @@ void testObj::test<2>(void)
 {
   tl_.maxSend_=3;
   testSend("this is the text");
-  ensure_equals("invalid number of calls to send()", tl_.sentCount_, 6+1);
+  ensure_equals("invalid number of calls to send()", tl_.sentCount_, 6);
 }
 
 // test reading sample string
