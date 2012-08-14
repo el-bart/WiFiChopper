@@ -48,6 +48,9 @@ int main(int argc, char** argv)
     // set speed to rear engine
     const IO::ProtoRTB::EngineSpeed es(0, 0, mv.x_);
     proto.engineSpeed(es);
+
+    // enable CLP
+    proto.enableCLP();
   }
 
   cout << "bye..." << endl;
