@@ -145,6 +145,15 @@ double ProtoRTB::batteryVoltage(void)
 }
 
 
+void ProtoRTB::enableCLP(void)
+{
+  lc_->send("enableclp");
+  const std::string r = lc_->read(timeout_);
+  if( r != "enabled" )
+    throw Util::Exception( UTIL_LOCSTRM << "CLP enabling failed with message: " << r );
+}
+
+
 ProtoRTB::Accel ProtoRTB::readRawAccelerometer(void)
 {
   // read from the device

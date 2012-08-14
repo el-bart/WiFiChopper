@@ -267,4 +267,29 @@ void testObj::test<14>(void)
   { }
 }
 
+// test enabling CLP
+template<>
+template<>
+void testObj::test<15>(void)
+{
+  lcm_->toSend_="enabled";
+  prot_.enableCLP();
+  ensure_equals("invalid command sent", lcm_->received_, "enableclp");
+}
+
+// test error when CLP's reponse is invalid
+template<>
+template<>
+void testObj::test<16>(void)
+{
+  lcm_->toSend_="oops...";
+  try
+  {
+    prot_.enableCLP();
+    fail("not exception on invalid response from CLP");
+  }
+  catch(const Util::Exception&)
+  { }
+}
+
 } // namespace tut

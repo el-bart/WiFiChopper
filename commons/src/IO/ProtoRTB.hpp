@@ -46,6 +46,7 @@ public:
   EngineSpeed engineSpeed(void);
   void engineSpeed(EngineSpeed spd);
   double batteryVoltage(void);
+  void enableCLP(void);
 
 private:
   Accel readRawAccelerometer(void);

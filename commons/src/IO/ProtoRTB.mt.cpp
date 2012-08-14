@@ -20,6 +20,10 @@ int main(int argc, char** argv)
 
   cout << setprecision(3) << fixed;
 
+  cout << "enabling CLP" << endl;
+  proto.enableCLP();
+  cout << "> <ok>" << endl;
+
   cout << "sending hello" << endl;
   cout << "> " << proto.hello() << endl;
 
