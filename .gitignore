@@ -6,3 +6,4 @@ rt-controller/tests/*/*.bin
 gen
 .protocol.txt.kate-swp.~1~
 .*.swp
+core
