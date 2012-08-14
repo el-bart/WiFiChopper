@@ -84,11 +84,9 @@ ProtoRTB::EngineSpeed ProtoRTB::engineSpeed(void)
 void ProtoRTB::engineSpeed(EngineSpeed spd)
 {
   // prepare message to be sent
-  std::string d;
+  std::string d("engset ");     // message
+  std::string exp("set");       // expected response
 
-  // inset command name
-  for(const char *it="engset "; *it!=0; ++it)
-    d.push_back(*it);
   // add main1
   {
     const uint8_t num = uint8_t( spd.getMain1()*255 );
@@ -96,6 +94,8 @@ void ProtoRTB::engineSpeed(EngineSpeed spd)
     d.push_back(hex.first);
     d.push_back(hex.second);
     d.push_back(' ');
+    exp.push_back(hex.first);
+    exp.push_back(hex.second);
   }
   // add main2
   {
@@ -104,6 +104,8 @@ void ProtoRTB::engineSpeed(EngineSpeed spd)
     d.push_back(hex.first);
     d.push_back(hex.second);
     d.push_back(' ');
+    exp.push_back(hex.first);
+    exp.push_back(hex.second);
   }
   // add rear
   {
@@ -113,14 +115,17 @@ void ProtoRTB::engineSpeed(EngineSpeed spd)
     d.push_back(sig);
     d.push_back(hex.first);
     d.push_back(hex.second);
+    exp.push_back(sig);
+    exp.push_back(hex.first);
+    exp.push_back(hex.second);
   }
 
   // send command
   lc_->send(d);
   // await response
   const std::string r = lc_->read(timeout_);
-  if( r != std::string( d.begin()+7, d.end() ) )
-    throw Util::Exception( UTIL_LOCSTRM << "invalid response: " << r );
+  if( r != exp )
+    throw Util::Exception( UTIL_LOCSTRM << "invalid response: " << r << " (expected: " << exp << ")" );
 }
 
 

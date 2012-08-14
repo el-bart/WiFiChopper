@@ -93,7 +93,7 @@ template<>
 template<>
 void testObj::test<4>(void)
 {
-  lcm_->toSend_="41 52 -63";
+  lcm_->toSend_="set4152-63";
   const ProtoRTB::EngineSpeed es(0x41/255.0, 0x52/255.0, -0x63/255.0);
   prot_.engineSpeed(es);
   ensure_equals("invalid request sent", lcm_->received_, "engset 41 52 -63");
