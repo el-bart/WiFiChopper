@@ -6,6 +6,7 @@
 #include "Watchdog.hpp"
 #include "AdcReadsWrapper.hpp"
 #include "Input.hpp"
+#include "CommLostProtector.hpp"
 
 
 //
@@ -30,6 +31,9 @@ int main(void)
     wdg.reset();            // watchdog reset
     adc.step();             // ADC processing step
     input.step(adc);        // process input data
+    // handle reset, if communication is lost. note that this mechanism is optional
+    // and has to be explicitly enabled by used using 'enableclp' command.
+    CommLostProtector::reactIfTimeout();
   }
 
   // this code is never reached

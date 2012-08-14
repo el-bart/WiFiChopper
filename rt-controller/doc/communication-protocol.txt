@@ -75,6 +75,16 @@ where A is hex value read from the ADC. to compute the actual voltage use the fo
 Vin=(3*A*4*5)/1024
 
 
+communication lost protector enable
+-----------------------------------
+command:
+enableclp
+reponse:
+enabled
+command enables CLP (Communication Lost Protector) mechanism. it automatically restes uC, when no
+new command arrives within about 3.1 second. after device reset this mechanism is disabled.
+
+
 error response
 --------------
 in case of error following response is returned:

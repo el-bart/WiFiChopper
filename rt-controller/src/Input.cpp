@@ -3,6 +3,7 @@
 #include "Input.hpp"
 #include "USART.hpp"
 #include "utils.hpp"
+#include "CommLostProtector.hpp"
 
 
 void Input::step(const AdcReadsWrapper& adc)
@@ -11,4 +12,5 @@ void Input::step(const AdcReadsWrapper& adc)
   if( cmd == nullptr )                      // if no command just return
     return;
   proc_.process( cmd, adc.getLast() );      // if new command is available, process it
+  CommLostProtector::reset();               // signal command has been received
 }

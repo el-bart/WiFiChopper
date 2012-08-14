@@ -18,6 +18,7 @@ private:
   void handleEng(Tokenizer& tokenizer);
   void handleEngSet(Tokenizer& tokenizer);
   void handleVin(Tokenizer& tokenizer, const AdcReadsWrapper::Reads &reads);
+  void handleEnableCLP(Tokenizer& tokenizer);
 
   EngSpeed eng_;
 };

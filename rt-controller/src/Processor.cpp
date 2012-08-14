@@ -5,6 +5,8 @@
 #include "Processor.hpp"
 #include "USART.hpp"
 #include "utils.hpp"
+#include "CommLostProtector.hpp"
+
 
 namespace
 {
@@ -133,6 +135,12 @@ void Processor::process(char *buf, const AdcReadsWrapper::Reads &reads)
   if( strEqRF(cmd, PSTR("vin?")) )
   {
     handleVin(tokenizer, reads);
+    return;
+  }
+
+  if( strEqRF(cmd, PSTR("enableclp")) )
+  {
+    handleEnableCLP(tokenizer);
     return;
   }
 
@@ -298,4 +306,17 @@ void Processor::handleVin(Tokenizer& tokenizer, const AdcReadsWrapper::Reads &re
   // send input voltage reading
   sendAsHex(reads.vin_);
   USART::send('\n');
+}
+
+
+void Processor::handleEnableCLP(Tokenizer& tokenizer)
+{
+  // sanity checks
+  if( tokenizer.getNextToken()!=nullptr )
+  {
+    errorFlash(g_tooManyArgsStr);
+    return;
+  }
+  CommLostProtector::enable();
+  USART::sendFlash( PSTR("enabled\n") );
 }
