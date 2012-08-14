@@ -10,8 +10,10 @@
 namespace Util
 {
 
+std::pair<char,char> toHex(uint8_t in);
 std::string toHex(const std::vector<uint8_t> &in);
 
+uint8_t fromHex(char in);
 std::vector<uint8_t> fromHex(const std::string &in);
 
 }

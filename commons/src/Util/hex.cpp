@@ -7,14 +7,23 @@
 namespace Util
 {
 
+
+std::pair<char,char> toHex(uint8_t in)
+{
+  constexpr char lut[] = "0123456789abcdef";
+  return std::pair<char,char>( lut[in>>4], lut[in&0x0F] );
+}
+
+
 std::string toHex(const std::vector<uint8_t> &in)
 {
   const char  *lut = "0123456789abcdef";
   std::string  out;
   for(auto it = in.begin(); it!=in.end(); ++it)
   {
-    out.push_back(lut[*it>>4]);
-    out.push_back(lut[*it&0x0F]);
+    const std::pair<char,char> tmp = toHex(*it);
+    out.push_back(tmp.first);
+    out.push_back(tmp.second);
   }
   return out;
 }
@@ -33,6 +42,13 @@ uint8_t parseHex(char c)
   return 10+(c-'a');
 }
 } // unnamed namespace
+
+
+uint8_t fromHex(const char in)
+{
+  return parseHex(in);
+}
+
 
 std::vector<uint8_t> fromHex(const std::string &in)
 {

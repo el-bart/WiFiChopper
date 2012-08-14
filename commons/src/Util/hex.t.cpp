@@ -35,7 +35,8 @@ template<>
 template<>
 void testObj::test<1>(void)
 {
-  auto out = toHex( {} );
+  std::vector<uint8_t> in;
+  auto out = toHex(in);
   ensure_equals("invalid hex string", out, "");
 }
 
@@ -112,6 +113,25 @@ void testObj::test<8>(void)
                      0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f} );
   ensure_equals("invalid hex string", out, "00102030405060708090a0b0c0d0e0f0"
                                            "000102030405060708090a0b0c0d0e0f");
+}
+
+// test parsing number
+template<>
+template<>
+void testObj::test<9>(void)
+{
+  const auto p = toHex(0xF9);
+  ensure_equals("invalid hex 1", p.first,  'f');
+  ensure_equals("invalid hex 2", p.second, '9');
+}
+
+// test parsing single hex
+template<>
+template<>
+void testObj::test<10>(void)
+{
+  const auto p = fromHex('e');
+  ensure_equals("invalid number parsed", p, 0xE);
 }
 
 } // namespace tut
