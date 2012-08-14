@@ -1,15 +1,40 @@
-#ifndef INCLUDE_JOYSTICK_DEVICE_HPP_FILE
-#define INCLUDE_JOYSTICK_DEVICE_HPP_FILE
+#ifndef INCLUDE_CONTROL_JOYSTICK_HPP_FILE
+#define INCLUDE_CONTROL_JOYSTICK_HPP_FILE
 
-#include <boost/noncopyable.hpp>
+#include <string>
+#include <memory>
+
+#include "Control/Input.hpp"
 
 
-namespace Joystick
+namespace Control
 {
 
-class Device: private boost::noncopyable
+class Joystick: public Input
 {
-}; // class Device
-} // namespace Joystick
+public:
+  struct Info
+  {
+    unsigned driverVer_[3];
+    char     name_[128];
+    unsigned axis_;
+    unsigned buttons_;
+  };
+
+  explicit Joystick(const std::string& path);
+
+private:
+  virtual void updateImpl(void);
+  virtual const std::string& nameImpl(void);
+
+  // device info
+  const Info              info_;
+  const std::string       name_;
+  // reads buffer
+  std::unique_ptr<int[]>  axis_;
+  std::unique_ptr<char[]> buttons_;
+};
+
+}
 
 #endif
