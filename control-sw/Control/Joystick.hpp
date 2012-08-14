@@ -13,6 +13,7 @@ namespace Control
 class Joystick: public Input
 {
 public:
+  // device info
   struct Info
   {
     unsigned driverVer_[3];
@@ -21,7 +22,27 @@ public:
     unsigned buttons_;
   };
 
-  explicit Joystick(const std::string& path);
+  // map of the axis-to-number
+  struct AxisMap
+  {
+    struct Axis
+    {
+      unsigned num_;
+      bool     invert_;
+    };
+
+    // OX and OY
+    bool useXY_;
+    Axis ox_;
+    Axis oy_;
+    // throttle
+    bool useTh_;
+    Axis th_;
+  };
+
+  Joystick(const std::string& path, AxisMap axisMap);
+
+  const Info& info(void) const { return info_; }
 
 private:
   virtual void updateImpl(void);
@@ -30,6 +51,7 @@ private:
   // device info
   const Info              info_;
   const std::string       name_;
+  const AxisMap           axisMap_;
   // reads buffer
   std::unique_ptr<int[]>  axis_;
   std::unique_ptr<char[]> buttons_;
