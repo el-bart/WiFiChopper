@@ -17,8 +17,7 @@ std::pair<char,char> toHex(uint8_t in)
 
 std::string toHex(const std::vector<uint8_t> &in)
 {
-  const char  *lut = "0123456789abcdef";
-  std::string  out;
+  std::string out;
   for(auto it = in.begin(); it!=in.end(); ++it)
   {
     const std::pair<char,char> tmp = toHex(*it);
