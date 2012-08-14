@@ -31,19 +31,19 @@ ProtoRTB::EngineSpeed::EngineSpeed(const double main1, const double main2, const
 
 
 
-ProtoRTB::ProtoRTB(TextLinePtr tl, const double timeout):
-  tl_( checkInPtr( std::move(tl) ) ),
+ProtoRTB::ProtoRTB(LineCommPtr lc, const double timeout):
+  lc_( checkInPtr( std::move(lc) ) ),
   timeout_( timeout ),
   raw1G_( computeRaw1G() )
 {
-  assert( tl_.get()!=NULL );
+  assert( lc_.get()!=NULL );
 }
 
 
 std::string ProtoRTB::hello(void)
 {
-  tl_->send("hello");
-  return tl_->read(timeout_);
+  lc_->send("hello");
+  return lc_->read(timeout_);
 }
 
 
@@ -58,11 +58,10 @@ ProtoRTB::Accel ProtoRTB::accelerometer(void)
 
 ProtoRTB::EngineSpeed ProtoRTB::engineSpeed(void)
 {
-  tl_->send("eng?");
-  TextLine::Data d;
-  tl_->read(d, timeout_);
-  if( d.size() != 3*2 +2 +1 || d[2] != ' ' || d[5] != ' ' )
-    throw Util::Exception( UTIL_LOCSTRM << "invalid response for engine speed query: " << std::string( d.begin(), d.end() ) );
+  lc_->send("eng?");
+  const std::string d = lc_->read(timeout_);
+  if( d.length() != 3*2 +2 +1 || d[2] != ' ' || d[5] != ' ' )
+    throw Util::Exception( UTIL_LOCSTRM << "invalid response for engine speed query: " << d );
 
   // parse values
   const uint8_t main1   = (Util::fromHex(d[0])<<4) | Util::fromHex(d[1]);
@@ -85,8 +84,7 @@ ProtoRTB::EngineSpeed ProtoRTB::engineSpeed(void)
 void ProtoRTB::engineSpeed(EngineSpeed spd)
 {
   // prepare message to be sent
-  TextLine::Data d;
-  d.reserve(32);
+  std::string d;
 
   // inset command name
   for(const char *it="engset "; *it!=0; ++it)
@@ -118,9 +116,9 @@ void ProtoRTB::engineSpeed(EngineSpeed spd)
   }
 
   // send command
-  tl_->send(d);
+  lc_->send(d);
   // await response
-  std::string r = tl_->read(timeout_);
+  const std::string r = lc_->read(timeout_);
   if( r != std::string( d.begin()+7, d.end() ) )
     throw Util::Exception( UTIL_LOCSTRM << "invalid response: " << r );
 }
@@ -129,9 +127,9 @@ void ProtoRTB::engineSpeed(EngineSpeed spd)
 double ProtoRTB::batteryVoltage(void)
 {
   // send message
-  tl_->send("vin?");
+  lc_->send("vin?");
   // read response
-  const std::string r = tl_->read(timeout_);
+  const std::string r = lc_->read(timeout_);
   // sanity check
   if( r.length() != 2 )
     throw Util::Exception( UTIL_LOCSTRM << "invalid voltage request response: " << r );
@@ -145,13 +143,12 @@ double ProtoRTB::batteryVoltage(void)
 ProtoRTB::Accel ProtoRTB::readRawAccelerometer(void)
 {
   // read from the device
-  tl_->send("accel?");
-  TextLine::Data r;
-  tl_->read(r, timeout_);
+  lc_->send("accel?");
+  const std::string r = lc_->read(timeout_);
 
   // sanity checks
   if( r.size() != 3*2 + 2 || r[2] != ' ' || r[5] != ' ' )
-    throw Util::Exception( UTIL_LOCSTRM << "invalid response: " << std::string( r.begin(), r.end() ) );
+    throw Util::Exception( UTIL_LOCSTRM << "invalid response: " << r );
 
   // parse reposen
   const double ox = (Util::fromHex(r[0])<<4) | Util::fromHex(r[1]);
@@ -178,10 +175,10 @@ ProtoRTB::Accel ProtoRTB::computeRaw1G(void)
 }
 
 
-ProtoRTB::TextLinePtr ProtoRTB::checkInPtr(TextLinePtr ptr) const
+LineCommPtr ProtoRTB::checkInPtr(LineCommPtr ptr) const
 {
-  if( ptr.get() == nullptr )
-    throw Util::Exception( UTIL_LOCSTRM << "TextLine pointer cannot be NULL" );
+  if( !ptr )
+    throw Util::Exception( UTIL_LOCSTRM << "LineComm pointer cannot be NULL" );
   return std::move(ptr);
 }
 

@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "Util/Exception.hpp"
-#include "IO/TextLine.hpp"
+#include "IO/LineComm.hpp"
 
 namespace IO
 {
@@ -38,9 +38,8 @@ public:
     double rear_;   // [-1..+1]
   };
 
-  typedef std::unique_ptr<TextLine> TextLinePtr;
 
-  ProtoRTB(TextLinePtr tl, double timeout);
+  ProtoRTB(LineCommPtr lc, double timeout);
 
   std::string hello(void);
   Accel accelerometer(void);
@@ -51,10 +50,9 @@ public:
 private:
   Accel readRawAccelerometer(void);
   Accel computeRaw1G(void);
+  LineCommPtr checkInPtr(LineCommPtr ptr) const;
 
-  TextLinePtr checkInPtr(TextLinePtr ptr) const;
-
-  TextLinePtr  tl_;
+  LineCommPtr  lc_;
   const double timeout_;
   const Accel  raw1G_;
 };

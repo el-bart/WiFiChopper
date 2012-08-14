@@ -9,24 +9,21 @@ using namespace IO;
 namespace
 {
 
-struct TextLineMock: public TextLine
+struct LineCommMock: public LineComm
 {
-  TextLineMock(void):
-    toSend_( "10 00 00\n" ),
+  LineCommMock(void):
+    toSend_( "10 00 00" ),
     raw1G_{0x10, 0x00, 0x00}
   { }
 
-  virtual size_t sendSome(const Data& data, size_t skip = 0)
+  virtual void send(const std::string& line)
   {
-    string tmp( data.begin() + skip, data.end() );
-    swap(received_, tmp);
-    return data.size() - skip;
+    received_ = line;
   }
 
-  virtual size_t readSome(Data& data, double timeout)
+  virtual std::string read(const double timeout)
   {
-    data.insert( data.end(), toSend_.begin(), toSend_.end() );
-    return toSend_.length();
+    return toSend_;
   }
 
   string                toSend_;
@@ -38,12 +35,12 @@ struct TextLineMock: public TextLine
 struct TestClass
 {
   TestClass(void):
-    tlm_( new TextLineMock ),
-    prot_( ProtoRTB::TextLinePtr{tlm_}, 2.0 )
+    lcm_( new LineCommMock ),
+    prot_( LineCommPtr{lcm_}, 2.0 )
   {
     // erase settings required for initial setup for 1G raw vector
-    tlm_->toSend_   = "NOT SET";
-    tlm_->received_ = "NOTHING RECEIVED YET";
+    lcm_->toSend_   = "NOT SET";
+    lcm_->received_ = "NOTHING RECEIVED YET";
   }
 
   void checkDouble(const double value, const double expected, const char *msg = "invalid value", const double eps=0.001) const
@@ -52,7 +49,7 @@ struct TestClass
       tut::ensure_equals(msg, value, expected);
   }
 
-  TextLineMock* tlm_;
+  LineCommMock* lcm_;
   ProtoRTB      prot_;
 };
 
@@ -71,10 +68,10 @@ template<>
 template<>
 void testObj::test<1>(void)
 {
-  tlm_->toSend_="hello response\n";
+  lcm_->toSend_="hello response";
   const string r = prot_.hello();
   ensure_equals("invalid hello response", r, "hello response");
-  ensure_equals("invalid command sent", tlm_->received_, "hello\n");
+  ensure_equals("invalid command sent", lcm_->received_, "hello");
 }
 
 // try reading accelerometer
@@ -82,13 +79,13 @@ template<>
 template<>
 void testObj::test<2>(void)
 {
-  tlm_->toSend_="6F F2 A9\n";
+  lcm_->toSend_="6F F2 A9";
   const ProtoRTB::Accel a = prot_.accelerometer();
-  const double          n = tlm_->raw1G_.norm();
+  const double          n = lcm_->raw1G_.norm();
   checkDouble(a.x_, 0x6F/n, "invalid accelerometer reading or OX");
   checkDouble(a.y_, 0xF2/n, "invalid accelerometer reading or OY");
   checkDouble(a.z_, 0xA9/n, "invalid accelerometer reading or OZ");
-  ensure_equals("invalid command sent", tlm_->received_, "accel?\n");
+  ensure_equals("invalid command sent", lcm_->received_, "accel?");
 }
 
 // try setting engine speed
@@ -96,10 +93,10 @@ template<>
 template<>
 void testObj::test<4>(void)
 {
-  tlm_->toSend_="41 52 -63\n";
+  lcm_->toSend_="41 52 -63";
   const ProtoRTB::EngineSpeed es(0x41/255.0, 0x52/255.0, -0x63/255.0);
   prot_.engineSpeed(es);
-  ensure_equals("invalid request sent", tlm_->received_, "engset 41 52 -63\n");
+  ensure_equals("invalid request sent", lcm_->received_, "engset 41 52 -63");
 }
 
 // try reading engine speed
@@ -107,12 +104,12 @@ template<>
 template<>
 void testObj::test<5>(void)
 {
-  tlm_->toSend_="c1 2f +3a\n";
+  lcm_->toSend_="c1 2f +3a";
   const ProtoRTB::EngineSpeed es = prot_.engineSpeed();
   checkDouble( es.getMain1(), 0xC1/255.0, "invalid speed of main1" );
   checkDouble( es.getMain2(), 0x2F/255.0, "invalid speed of main2" );
   checkDouble( es.getRear(),  0x3A/255.0, "invalid speed of rear" );
-  ensure_equals("invalid command sent", tlm_->received_, "eng?\n");
+  ensure_equals("invalid command sent", lcm_->received_, "eng?");
 }
 
 // try error while reading engine speed
@@ -120,7 +117,7 @@ template<>
 template<>
 void testObj::test<6>(void)
 {
-  tlm_->toSend_="ERROR: oops...\n";
+  lcm_->toSend_="ERROR: oops...";
   try
   {
     prot_.engineSpeed();
@@ -135,10 +132,10 @@ template<>
 template<>
 void testObj::test<7>(void)
 {
-  tlm_->toSend_="A6\n";
+  lcm_->toSend_="A6";
   const double r = prot_.batteryVoltage();
   checkDouble( r, (3*0xA6*4*5)/1024.0, "invalid voltage" );
-  ensure_equals("invalid command sent", tlm_->received_, "vin?\n");
+  ensure_equals("invalid command sent", lcm_->received_, "vin?");
 }
 
 // test initialization with nullptr
@@ -148,7 +145,7 @@ void testObj::test<8>(void)
 {
   try
   {
-    ProtoRTB prot( ProtoRTB::TextLinePtr{}, 1 );
+    ProtoRTB prot( LineCommPtr{}, 1 );
     fail("no excaption on NULL API pointer");
   }
   catch(const Util::Exception&)
@@ -246,7 +243,7 @@ void testObj::test<13>(void)
 {
   try
   {
-    ProtoRTB prot( ProtoRTB::TextLinePtr{}, 1 );
+    ProtoRTB prot( LineCommPtr{}, 1 );
     fail("no excaption on NULL API pointer");
   }
   catch(const Util::Exception&)
@@ -259,7 +256,7 @@ template<>
 void testObj::test<14>(void)
 {
   //      here:     vv
-  tlm_->toSend_="41 FF -63\n";
+  lcm_->toSend_="41 FF -63";
   const ProtoRTB::EngineSpeed es(0x41/255.0, 0x52/255.0, -0x63/255.0);
   try
   {
