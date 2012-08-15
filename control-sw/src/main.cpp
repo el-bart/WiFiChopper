@@ -27,7 +27,7 @@ int main(int argc, char **argv)
   try
   {
     // setup printout for values
-    cout << setprecision(3) << fixed;
+    cout << setprecision(2) << fixed;
 
     cout << argv[0] << ": uChaos client is initializing..." << endl;
     IO::BuilderPtr  builder( new IO::ClientBuilder( Net::parseAddress(argv[1], argv[2]), Crypto::readKeyFromFile(argv[3]) ) );
@@ -65,7 +65,7 @@ int main(int argc, char **argv)
       // do other stuff once in a while
       if( rtClk.elapsed() > 1.5 )
       {
-        board.enableCLP();                              // CLP must be enabled all the time!
+        board.enableCLP();                              // CLP must be enabled all time!
         const auto accel = board.accelerometer();       // read accelerometer settings
         const auto volt  = board.batteryVoltage();      // read battery voltage
         cout << "batt.=" << volt << "V accel.=(" << accel.x_ << "," << accel.y_ << "," << accel.z_ << ")" << endl;
