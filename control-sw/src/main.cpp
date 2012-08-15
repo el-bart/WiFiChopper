@@ -1,19 +1,22 @@
 #include <iostream>
+#include <algorithm>
 #include <stdexcept>
 
+#include "Crypto/readKeyFromFile.hpp"
+#include "Net/parseAddress.hpp"
 #include "IO/LineCommNetwork.hpp"
 #include "IO/ClientBuilder.hpp"
-#include "Net/parseAddress.hpp"
-#include "Crypto/readKeyFromFile.hpp"
+#include "IO/ProtoRTB.hpp"
+#include "Control/Joystick.hpp"
 
 using namespace std;
 
 
 int main(int argc, char **argv)
 {
-  if( argc!=1+2+1 )
+  if( argc!=1+2+1+1 )
   {
-    cerr << argv[0] << " <host> <port> <key_file>" << endl;
+    cerr << argv[0] << " <host> <port> <key_file> <joystick_dev>" << endl;
     return 1;
   }
 
@@ -21,27 +24,19 @@ int main(int argc, char **argv)
   {
     cout << argv[0] << ": uChaos client is initializing..." << endl;
     IO::BuilderPtr  builder( new IO::ClientBuilder( Net::parseAddress(argv[1], argv[2]), Crypto::readKeyFromFile(argv[3]) ) );
+
+    cout << argv[0] << ": joystick initialization..." << endl;
+    Control::InputPtr input( new Control::Joystick( argv[4], { true, {1,true}, {0,false}, true, {3,true} } ) );
+    cout << argv[0] << ": connect to the device: " << input->name() << endl;
+
     cout << argv[0] << ": connecting to the server..." << endl;
     IO::LineCommPtr remote = builder->build();
 
+    cout << argv[0] << ": initializing communication..." << endl;
+    IO::ProtoRTB board( std::move(remote), 4.0 );
+    cout << argv[0] << ": connected to: " << board.hello() << endl;
 
-    // TODO: actions here:
-    remote->send("hello");
-    cout << "> " << remote->read(2.0) << endl;
-
-    remote->send("hello");
-    cout << "> " << remote->read(2.0) << endl;
-
-    remote->send("accel?");
-    cout << "> " << remote->read(2.0) << endl;
-
-    remote->send("vin?");
-    cout << "> " << remote->read(2.0) << endl;
-
-    remote->send("eng?");
-    cout << "> " << remote->read(2.0) << endl;
-    // TODO: end
-
+    // TODO
 
     cout << argv[0] << "exiting..." << endl;
     return 0;
