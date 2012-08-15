@@ -1,13 +1,17 @@
+#include <iomanip>
 #include <iostream>
 #include <algorithm>
 #include <stdexcept>
 
+#include "Util/timedSelect.hpp"
+#include "Util/ClockTimer.hpp"
 #include "Crypto/readKeyFromFile.hpp"
 #include "Net/parseAddress.hpp"
 #include "IO/LineCommNetwork.hpp"
 #include "IO/ClientBuilder.hpp"
 #include "IO/ProtoRTB.hpp"
 #include "Control/Joystick.hpp"
+#include "Control/MotionProcessor.hpp"
 
 using namespace std;
 
@@ -22,12 +26,16 @@ int main(int argc, char **argv)
 
   try
   {
+    // setup printout for values
+    cout << setprecision(3) << fixed;
+
     cout << argv[0] << ": uChaos client is initializing..." << endl;
     IO::BuilderPtr  builder( new IO::ClientBuilder( Net::parseAddress(argv[1], argv[2]), Crypto::readKeyFromFile(argv[3]) ) );
 
     cout << argv[0] << ": joystick initialization..." << endl;
     Control::InputPtr input( new Control::Joystick( argv[4], { true, {1,true}, {0,false}, true, {3,true} } ) );
     cout << argv[0] << ": connect to the device: " << input->name() << endl;
+    const Control::MotionProcessor motion(20/255.0);
 
     cout << argv[0] << ": connecting to the server..." << endl;
     IO::LineCommPtr remote = builder->build();
@@ -36,7 +44,34 @@ int main(int argc, char **argv)
     IO::ProtoRTB board( std::move(remote), 4.0 );
     cout << argv[0] << ": connected to: " << board.hello() << endl;
 
-    // TODO
+    // enable CLP - just in case...
+    board.enableCLP();
+
+    Util::ClockTimerRT rtClk;
+    while(true)
+    {
+
+      // check if there is something new on input
+      if( Util::timedSelect( input->rawDescriptor(), 0.5 ) )
+      {
+        input->update();                                // read new setup
+        const auto mv = input->getMovement();
+        const auto th = input->getThrottle();
+        const auto es = motion.transform( mv, th );     // translate this to engine speeds
+        //cout << "S: " << es.getMain1() << " " << es.getMain2() << "  / " << es.getRear() << endl;
+        board.engineSpeed(es);                          // update new speed settings
+      }
+
+      // do other stuff once in a while
+      if( rtClk.elapsed() > 1.5 )
+      {
+        board.enableCLP();                              // CLP must be enabled all the time!
+        const auto accel = board.accelerometer();       // read accelerometer settings
+        const auto volt  = board.batteryVoltage();      // read battery voltage
+        cout << "batt.=" << volt << "V accel.=(" << accel.x_ << "," << accel.y_ << "," << accel.z_ << ")" << endl;
+        rtClk.restart();
+      }
+    }
 
     cout << argv[0] << "exiting..." << endl;
     return 0;
