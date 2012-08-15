@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <stdexcept>
+#include <unistd.h>
 
 #include "Util/timedSelect.hpp"
 #include "Util/ClockTimer.hpp"
@@ -14,6 +15,34 @@
 #include "Control/MotionProcessor.hpp"
 
 using namespace std;
+
+
+void ensureInitialNeutralPosition(const char* progName, Control::Input& input)
+{
+  bool info = true;
+  while(true)
+  {
+    if( Util::timedSelect( input.rawDescriptor(), 0.05 ) )
+        input.update();
+    else
+    {
+      const auto mv = input.getMovement();
+      const auto th = input.getThrottle();
+      if( th == 0 && mv.x_ == 0 && mv.y_ == 0 )
+        break;
+      if( info )
+      {
+        cout << progName << ": !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+        cout << progName << ": your input device is NOT in the neutral position!"                 << endl;
+        cout << progName << ": please fix this by pushing joystick back to the neutral position." << endl;
+        cout << progName << ": !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+        info = false;
+      }
+    }
+  }
+  cout << progName << ": ok - got the neutral position!" << endl;
+  sleep(1);
+}
 
 
 int main(int argc, char **argv)
@@ -35,6 +64,7 @@ int main(int argc, char **argv)
     cout << argv[0] << ": joystick initialization..." << endl;
     Control::InputPtr input( new Control::Joystick( argv[4], { true, {1,true}, {0,false}, true, {3,true} } ) );
     cout << argv[0] << ": connect to the device: " << input->name() << endl;
+    ensureInitialNeutralPosition( argv[0], *input );
     const Control::MotionProcessor motion(20/255.0);
 
     cout << argv[0] << ": connecting to the server..." << endl;
