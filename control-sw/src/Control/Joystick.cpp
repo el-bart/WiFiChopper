@@ -145,9 +145,11 @@ void Joystick::updateImpl(void)
   {
     constexpr double maxVal= 0xFFFF;
     constexpr double half  = maxVal/2.0;
-    double th = (half + axis_[axisMap_.th_.num_])/maxVal;    // map to [0..1]
-    if( axisMap_.th_.invert_ )
-      th = 1.0 - th;
+    double th = axis_[axisMap_.th_.num_] / half;    // map to [0..1]
+    if( axisMap_.th_.invert_ )                      // axis invertion requested
+      th = - th;
+    if( th < 0.0 )                                  // there is no backward throttle
+      th = 0.0;
     setThrottle( th );
   }
 }
