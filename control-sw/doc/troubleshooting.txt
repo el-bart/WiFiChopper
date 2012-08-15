@@ -1,0 +1,18 @@
+Troubleshooting
+---------------
+
+Joystick is moving mouse cursor
+-------------------------------
+
+add the following section to your /etc/X11/xorg.conf file:
+
+Section "InputClass"
+    Identifier "joystick catchall"
+    MatchIsJoystick "on"
+    MatchDevicePath "/dev/input/event*"
+    Driver "joystick"
+    Option "StartKeysEnabled" "False"
+    Option "StartMouseEnabled" "False"
+EndSection
+
+this prevents joystick's axis and buttons from controlling X11's input.

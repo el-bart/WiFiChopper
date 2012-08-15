@@ -1,0 +1,69 @@
+OpenWRT config
+--------------
+
+after installing image of the system, and all of the required modules, it is time to configure
+its network. proposed config is that router's WiFi will be access point, with dhcp (i.e. 'lan'),
+while ethernet port will provide internet access, if connected (i.e. 'wan'). thanks to this one
+can easily connect to chopper, the same way to any other AP, while (stationary) ethernet
+connection allows easy packages and upgrades installations, using regular network connection and
+opkg package manager.
+
+first step to setup WiFi is to enable it via UCI:
+uci set wireless.radio0.disabled=0
+uci commit
+
+next wireless network needs to be setup in the /etc/config/wireless file. example configuration
+for WPA2/PSK encryption is here:
+
+config wifi-device 'radio0'
+        option type 'mac80211'
+        option macaddr '14:e6:e4:e7:66:ac'
+        option hwmode '11ng'
+        option htmode 'HT20'
+        list ht_capab 'SHORT-GI-20'
+        list ht_capab 'SHORT-GI-40'
+        list ht_capab 'RX-STBC1'
+        list ht_capab 'DSSS_CCK-40'
+        option disabled '0'
+        option channel '2'
+
+config wifi-iface
+        option device 'radio0'
+        option network 'lan'
+        option mode 'ap'
+        option ssid 'wifichopper'
+        option encryption 'psk2'
+        option key 'SomeSecretKeyToWiFi'
+
+
+
+next step is network configuration. assuming WiFi will provide 192.168.1.x network
+/etc/config/network file should be set to something similar to this:
+
+config interface 'loopback'
+        option ifname 'lo'
+        option proto 'static'
+        option ipaddr '127.0.0.1'
+        option netmask '255.0.0.0'
+
+config interface 'wan'
+        option ifname 'eth0'
+        #option type 'bridge'
+        option proto 'dhcp'
+
+config interface 'lan'
+        option ifname  'wlan0'
+        option type    'bridge'
+        option proto   'static'
+        option ipaddr  '192.158.1.1'
+        option netmask '255.255.255.0'
+
+
+having this done, reboot. you should be able to connect to the device via wireless connection.
+while having ethernet cable plugged in, you can access internet as well.
+
+in order to run motherboard's software you'll need following packages:
+libmcrypt - provides encryption routines, used for network communication
+librt     - provides timers support.
+libstdcpp - C++ standard library. minimum working version is the one from gcc-4.7 package.
+            note: this must be libstdcpp - uClibcxx will NOT work due to lack of C++11 support.
