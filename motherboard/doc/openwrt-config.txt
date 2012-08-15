@@ -67,3 +67,4 @@ libmcrypt - provides encryption routines, used for network communication
 librt     - provides timers support.
 libstdcpp - C++ standard library. minimum working version is the one from gcc-4.7 package.
             note: this must be libstdcpp - uClibcxx will NOT work due to lack of C++11 support.
+kmod-ftdi_serial - driver for the FTDI chip, responsible for RS-232 communication with RT-Board.
