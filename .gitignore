@@ -7,3 +7,4 @@ gen
 .*.kate-swp.~*~
 .*.swp
 core
+*.o
