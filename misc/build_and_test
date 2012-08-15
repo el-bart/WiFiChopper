@@ -1,0 +1,51 @@
+#!/bin/bash
+
+set -e
+
+PRJ_ROOT="`dirname "$0"`/../"
+CPUS="`grep ^processor /proc/cpuinfo | wc -l`"
+
+[ "$1" = "--clean" ] && CLEAN_BEFORE_BUILD="clean"
+
+
+# build_dir "name" "path" "target list"
+function build_dir()
+{
+  (
+    set -e
+    echo
+    echo
+    echo "BUILDING $1..."
+    cd "$2"
+    for p in $CLEAN_BEFORE_BUILD $3
+    do
+      # build selected profile
+      make "-j$CPUS" "$p"
+      # if profile is tests, run them
+      if [ "$p" == "test" ]
+      then
+        echo "RUNNING UNIT TEST APPLICATION"
+        ./gen/$p/*.t
+      fi
+      # if profile is mtests, inform user about running them
+      if [ "$p" == "mtest" ]
+      then
+        echo "RUN MANUALLY FOLLOWING TESTS:"
+        find gen/ -name '*.mt' -o -name '*.mt.out' -exec echo "$2/{}" \;
+      fi
+    done
+  )
+}
+
+cd "$PRJ_ROOT"
+
+# local builds (PC)
+build_dir "COMMONS"              "commons/src"     "test mtest"
+build_dir "CONTROL SOFTWARE"     "control-sw/src"  "debug release profile test mtest"
+build_dir "MOTHER BOARD (local)" "motherboard/src" "debug release profile test mtest"
+# RT-board (AVR)
+build_dir "RT-CONTROLLER (avr)"         "rt-controller/src"                      "debug release profile"
+build_dir "RT-CONTROLLER/test/UT"       "rt-controller/tests/ut"                 "test"
+build_dir "RT-CONTROLLER/test/accel"    "rt-controller/tests/accelerometer-read" "all"
+build_dir "RT-CONTROLLER/test/eng-loop" "rt-controller/tests/engine-test-loop"   "all"
+build_dir "RT-CONTROLLER/test/usart"    "rt-controller/tests/usart-toy"          "all"
