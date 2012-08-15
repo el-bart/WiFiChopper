@@ -50,13 +50,13 @@ protected:
 
   void setMovement(const Movement m)
   {
-    assert( -1 <= m.x_ && m.x_ < +1 );
-    assert( -1 <= m.y_ && m.y_ < +1 );
+    assert( -1 <= m.x_ && m.x_ <= +1 );
+    assert( -1 <= m.y_ && m.y_ <= +1 );
     movement_ = m;
   }
   void setThrottle(const double t)
   {
-    assert( 0 <= t && t < +1 );
+    assert( 0 <= t && t <= +1 );
     throttle_ = t;
   }
 
