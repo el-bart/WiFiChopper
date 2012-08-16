@@ -40,8 +40,12 @@ void ensureInitialNeutralPosition(const char* progName, Control::Input& input)
       }
     }
   }
-  cout << progName << ": ok - got the neutral position!" << endl;
-  sleep(1);
+
+  if( !info )
+  {
+    cout << progName << ": ok - got the neutral position!" << endl;
+    sleep(2);
+  }
 }
 
 
@@ -65,7 +69,7 @@ int main(int argc, char **argv)
     Control::InputPtr input( new Control::Joystick( argv[4], { true, {1,true}, {0,false}, true, {3,true} } ) );
     cout << argv[0] << ": connect to the device: " << input->name() << endl;
     ensureInitialNeutralPosition( argv[0], *input );
-    const Control::MotionProcessor motion(20/255.0);
+    const Control::MotionProcessor motion( 100/255.0, + 15/255.0 );
 
     cout << argv[0] << ": connecting to the server..." << endl;
     IO::LineCommPtr remote = builder->build();
@@ -77,30 +81,45 @@ int main(int argc, char **argv)
     // enable CLP - just in case...
     board.enableCLP();
 
-    Util::ClockTimerRT rtClk;
+    Util::ClockTimerRT rtClkCLP;
+    Util::ClockTimerRT rtClkRead;
     while(true)
     {
 
-      // check if there is something new on input
-      if( Util::timedSelect( input->rawDescriptor(), 0.5 ) )
+      try
       {
-        input->update();                                // read new setup
-        const auto mv = input->getMovement();
-        const auto th = input->getThrottle();
-        const auto es = motion.transform( mv, th );     // translate this to engine speeds
-        //cout << "S: " << es.getMain1() << " " << es.getMain2() << "  / " << es.getRear() << endl;
-        board.engineSpeed(es);                          // update new speed settings
+
+        // check if there is something new on input
+        if( Util::timedSelect( input->rawDescriptor(), 0.1 ) )
+        {
+          input->update();                                // read new setup
+          const auto mv = input->getMovement();
+          const auto th = input->getThrottle();
+          const auto es = motion.transform( mv, th );     // translate this to engine speeds
+          //cout << "S: " << es.getMain1() << " " << es.getMain2() << "  / " << es.getRear() << endl;
+          board.engineSpeed(es);                          // update new speed settings
+        }
+
+        // do other stuff once in a while
+        if( rtClkCLP.elapsed() > 0.6 )
+        {
+          board.enableCLP();                              // CLP must be enabled all time!
+          rtClkCLP.restart();
+        }
+        if( rtClkRead.elapsed() > 1.5 )
+        {
+          const auto accel = board.accelerometer();       // read accelerometer settings
+          const auto volt  = board.batteryVoltage();      // read battery voltage
+          cout << "batt.=" << volt << "V accel.=(" << accel.x_ << "," << accel.y_ << "," << accel.z_ << ")" << endl;
+          rtClkRead.restart();
+        }
+
+      }
+      catch(const std::exception& ex)
+      {
+        cerr << argv[0] << ": communication error: " << ex.what() << " - proceeding..." << endl;
       }
 
-      // do other stuff once in a while
-      if( rtClk.elapsed() > 1.5 )
-      {
-        board.enableCLP();                              // CLP must be enabled all time!
-        const auto accel = board.accelerometer();       // read accelerometer settings
-        const auto volt  = board.batteryVoltage();      // read battery voltage
-        cout << "batt.=" << volt << "V accel.=(" << accel.x_ << "," << accel.y_ << "," << accel.z_ << ")" << endl;
-        rtClk.restart();
-      }
     }
 
     cout << argv[0] << "exiting..." << endl;

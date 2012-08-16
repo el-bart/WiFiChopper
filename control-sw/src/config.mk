@@ -9,4 +9,4 @@ export LD :=$(CXX)
 # extra flags, if needed
 export CFLAGS  +=
 export CXXFLAGS+=-std=c++11
-export LDFLAGS +=-lmcrypt -lrt
+export LDFLAGS +=-lopencv_highgui -lopencv_core -lopencv_imgproc -lmcrypt -lrt
