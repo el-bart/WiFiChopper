@@ -82,7 +82,7 @@ enableclp
 reponse:
 enabled
 command enables CLP (Communication Lost Protector) mechanism. it automatically restes uC, when no
-new command arrives within about 3.1 second. after device reset this mechanism is disabled.
+new command arrives within about 1.1 second. after device reset this mechanism is disabled.
 
 
 error response

@@ -10,7 +10,7 @@ namespace
 {
 volatile uint8_t  g_cycles  = 0;
 constexpr uint8_t second    = F_CPU/1024/256;  // prescaller is set to 1024 while counter interrupts every 256 such a cycles
-constexpr uint8_t maxCycles = 3*second;        // maximum time w/o command
+constexpr uint8_t maxCycles = 1*second;        // maximum time w/o command
 static_assert( maxCycles <= 0xFF/2, "values are too big - use uin16_t instead" );
 } // unnamed namespace
 
