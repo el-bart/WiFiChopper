@@ -10,14 +10,16 @@ namespace Control
 class MotionProcessor
 {
 public:
-  explicit MotionProcessor(double rotFactor):
-    rotFactor_( rotFactor )
+  MotionProcessor(double rotFactor, double trim):
+    rotFactor_( rotFactor ),
+    trim_( trim )
   { }
 
   IO::ProtoRTB::EngineSpeed transform(Control::Input::Movement mov, double throttle) const;
 
 private:
-  double rotFactor_;
+  const double rotFactor_;
+  const double trim_;
 };
 
 }
