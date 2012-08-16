@@ -49,7 +49,6 @@ FrameGrabberV4L::FrameGrabberV4L(std::string devPath):
   dev_( openDevice() )
 {
   init();
-  startCapture();
 }
 
 
@@ -61,24 +60,19 @@ cv::Mat FrameGrabberV4L::grabImpl(void)
     throw Util::Exception( UTIL_LOCSTRM << "timeout occured while waiting for the image" );
 
   // get buffer from the device
-  v4l2_buffer buf;
-  zeroMemory(buf);
-  buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  buf.memory = V4L2_MEMORY_MMAP;
-  callIoctl( dev_.get(), VIDIOC_DQBUF, &buf );
-
-  // get proper buffer
-  if( buf.index >= buffers_.size() )
-    throw std::logic_error("index returned by ioctl() is out of bound - wtf?!");
-  MMem& mm = buffers_[buf.index];
+  ImageBuffer  img( new uint8_t[imageBufferSize_] );
+  size_t       left = imageBufferSize_;
+  do
+  {
+    const ssize_t ret = read( dev_.get(), img.get(), left );
+    if( ret == -1 )
+      throw Util::Exception( UTIL_LOCSTRM << "read of " << imageBufferSize_ << " bytes failed: " << strerror(errno) );
+    left -= ret;
+  }
+  while( left > 0 );
 
   // convert to RGB
-  cv::Mat tmp = toRGB(mm);
-
-  // return buffer to the driver
-  // TODO: this place is not exception safe - if toRGB() throws this buffer will never be
-  //       enqueued back to the driver (handle will not be lost however)
-  callIoctl( dev_.get(), VIDIOC_QBUF, &buf );
+  cv::Mat tmp = toRGB( std::move(img) );
 
   // return image to the user
   return tmp;
@@ -97,94 +91,55 @@ Util::UniqueDescriptor FrameGrabberV4L::openDevice(void) const
 void FrameGrabberV4L::init(void)
 {
   // check device's capabilities
-  v4l2_capability cap;
-  callIoctl( dev_.get(), VIDIOC_QUERYCAP, &cap );
-  if( !( cap.capabilities & V4L2_CAP_VIDEO_CAPTURE ) )
-    throw Util::Exception( UTIL_LOCSTRM << "'" << devPath_ << "' is not a V4Lv2 capture device" );
-  if( !( cap.capabilities & V4L2_CAP_STREAMING ) )
-    throw Util::Exception( UTIL_LOCSTRM << "'" << devPath_ << "' is not able to stream data (mmap)" );
+  {
+    v4l2_capability cap;
+    callIoctl( dev_.get(), VIDIOC_QUERYCAP, &cap );
+    if( !( cap.capabilities & V4L2_CAP_VIDEO_CAPTURE ) )
+      throw Util::Exception( UTIL_LOCSTRM << "'" << devPath_ << "' is not a V4Lv2 capture device" );
+    if( !( cap.capabilities & V4L2_CAP_READWRITE ) )
+      throw Util::Exception( UTIL_LOCSTRM << "'" << devPath_ << "' is not able to stream data (via read() syscall)" );
+  }
 
-//#if 0
-  // crop c(r)ap... - errors are ignored here
-  v4l2_cropcap cropcap;
-  zeroMemory(cropcap);
-  cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  callIoctlImpl( __FILE__, __LINE__, dev_.get(), VIDIOC_CROPCAP, &cropcap, false );    // query
-  // crop setup - errors are ignored here
-  v4l2_crop crop;
-  crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  crop.c    = cropcap.defrect;                          // default
-  callIoctlImpl( __FILE__, __LINE__, dev_.get(), VIDIOC_S_CROP, &crop, false );        // set
-//#endif
+  // crop, cap and crap... this can fail - doesn't matter. errors will be ignored here
+  {
+    // crop c(r)ap...
+    v4l2_cropcap cropcap;
+    zeroMemory(cropcap);
+    cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    callIoctlImpl( __FILE__, __LINE__, dev_.get(), VIDIOC_CROPCAP, &cropcap, false );    // set
+    // crop setup
+    v4l2_crop crop;
+    crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    crop.c    = cropcap.defrect;                          // default
+    callIoctlImpl( __FILE__, __LINE__, dev_.get(), VIDIOC_S_CROP, &crop, false );        // set
+  }
 
   // setup format
-  v4l2_format fmt;
-  zeroMemory(fmt);
-  fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  fmt.fmt.pix.width       = 0;                              // autodetect
-  fmt.fmt.pix.height      = 0;                              // autodetect
-  //fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;              // shitty, but usually works... :/
-  fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
-  fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
-  callIoctl( dev_.get(), VIDIOC_S_FMT, &fmt );
-  // set sizes according to the parameters read
-  width_        = fmt.fmt.pix.width;
-  height_       = fmt.fmt.pix.height;
-  bytesPerLine_ = fmt.fmt.pix.bytesperline;
-
-  // initialize buffers
-  v4l2_requestbuffers req;
-  zeroMemory(req);
-  req.count  = 3;
-  req.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  req.memory = V4L2_MEMORY_MMAP;
-  callIoctl( dev_.get(), VIDIOC_REQBUFS, &req );
-  if( req.count < 2 )
-    throw Util::Exception( UTIL_LOCSTRM << "requesting bufferes failed: got only " << req.count << " buffers" );
-  buffers_.reserve( req.count );
-  // mmap buffers
-  for(size_t i = 0; i < req.count; ++i)
   {
-    // request next buffer
-    v4l2_buffer buf;
-    zeroMemory(buf);
-    buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = V4L2_MEMORY_MMAP;
-    buf.index  = i;
-    callIoctl( dev_.get(), VIDIOC_QUERYBUF, &buf );
-    // mmap buffer
-    MMem mm( buf.length, PROT_READ|PROT_WRITE, MAP_SHARED, dev_.get(), buf.m.offset );
-    // hol buffer locally
-    buffers_.push_back( std::move(mm) );
+    v4l2_format fmt;
+    zeroMemory(fmt);
+    fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;      // :)
+    fmt.fmt.pix.width       = 1200;                             // TODO...
+    fmt.fmt.pix.height      = 1200;                             // TODO...
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;               // use RGB color plane
+    fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
+    callIoctl( dev_.get(), VIDIOC_S_FMT, &fmt );
+    // set sizes according to the parameters read
+    width_           = fmt.fmt.pix.width;
+    height_          = fmt.fmt.pix.height;
+    bytesPerLine_    = std::max( fmt.fmt.pix.bytesperline, width_*3 );  // fix buggy driver's results, if needed
+    imageBufferSize_ = height_ * bytesPerLine_;
+    assert( width_ <= bytesPerLine_ && "data line is shorter than image line!" );
+    assert( width_ * height_ * 3 <= imageBufferSize_ && "output image buffer is too small" );
   }
-
-  assert( buffers_.size() == req.count );
 }
 
 
-void FrameGrabberV4L::startCapture(void)
-{
-  // add all buffer to the queue of the driver
-  for(size_t i = 0; i < buffers_.size(); ++i)
-  {
-    v4l2_buffer buf;
-    zeroMemory(buf);
-    buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = V4L2_MEMORY_MMAP;
-    buf.index  = i;
-    callIoctl( dev_.get(), VIDIOC_QBUF, &buf );
-  }
-
-  // do the evolution! :)
-  v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  callIoctl( dev_.get(), VIDIOC_STREAMON, &type );
-}
-
-
-cv::Mat FrameGrabberV4L::toRGB(MMem& mm) const
+cv::Mat FrameGrabberV4L::toRGB(ImageBuffer img) const
 {
   const auto size = cv::Size(width_, height_);
-  cv::Mat out( size, CV_8UC3, mm.mem(), bytesPerLine_ );    // copy to output buffer
+  cv::Mat out( size, CV_8UC3, img.get(), bytesPerLine_ );       // get data buffer
+  img.release();                                                // ownership is passed
   return out;
 }
 
