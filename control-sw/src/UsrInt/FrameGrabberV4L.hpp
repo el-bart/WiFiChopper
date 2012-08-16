@@ -30,6 +30,7 @@ private:
 
   unsigned width_;
   unsigned height_;
+  unsigned bytesPerLine_;
 
   std::vector<MMem> buffers_;
 };
