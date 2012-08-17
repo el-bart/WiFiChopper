@@ -1,5 +1,6 @@
 #include <tut/tut.hpp>
 #include <algorithm>
+#include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -82,6 +83,44 @@ void testObj::test<4>(void)
   tmp = std::move(mm);
   ensure("ownership not transffered", mm.mem() == nullptr );
   ensure("ownership lost", tmp.mem() != nullptr );
+}
+
+
+namespace
+{
+int  g_mmapTestCalls;
+int  g_munmapTestCalls;
+char g_mmText[] = "alice has a cat";
+
+void *mmapCallTest(void*, size_t, int, int, int, off_t)
+{
+  ++g_mmapTestCalls;
+  return g_mmText;
+}
+
+int munmapCallTest(void*, size_t)
+{
+  ++g_munmapTestCalls;
+  return 0;
+}
+} // unnamed namespace
+
+// try custom m(un)map() calls
+template<>
+template<>
+void testObj::test<5>(void)
+{
+  g_mmapTestCalls   = 0;
+  g_munmapTestCalls = 0;
+  typedef MappedMem<char, mmapCallTest, munmapCallTest> MMTest;
+  {
+    MMTest mm(10, PROT_READ|PROT_WRITE, MAP_PRIVATE, 42, 0);
+    ensure_equals("test-mmap() not called", g_mmapTestCalls, 1);
+    ensure_equals("test-munmap() called", g_munmapTestCalls, 0);
+    ensure_equals("invalid data saved", mm.mem(), std::string(g_mmText) );
+  }
+  ensure_equals("test-mmap() called again", g_mmapTestCalls, 1);
+  ensure_equals("test-munmap() not called", g_munmapTestCalls, 1);
 }
 
 } // namespace tut

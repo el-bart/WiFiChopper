@@ -13,13 +13,13 @@
 namespace Util
 {
 
-template<typename T>
+template<typename T, void *(*mmapCall)(void*, size_t, int, int, int, off_t)=mmap, int (*munmapCall)(void*, size_t)=munmap>
 class MappedMem
 {
 public:
   MappedMem(const unsigned size, const int prot, const int flags, const int fd, const off_t offset):
     size_( size ),
-    mem_( static_cast<T*>( mmap( nullptr /* anywhere */, size_, prot, flags, fd, offset ) ) )
+    mem_( static_cast<T*>( (*mmapCall)( nullptr /* anywhere */, size_, prot, flags, fd, offset ) ) )
   {
     if( mem_ == MAP_FAILED )
       throw Util::Exception( UTIL_LOCSTRM << "mmap() failed: " << strerror(errno) );
@@ -28,7 +28,7 @@ public:
   ~MappedMem(void)
   {
     if( mem_ != nullptr )
-      munmap( mem_, size_ );
+      (*munmapCall)( mem_, size_ );
   }
 
   MappedMem(MappedMem&& other):
