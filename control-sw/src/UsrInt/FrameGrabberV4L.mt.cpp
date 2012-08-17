@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 
   // check what is the grabbing resolution
   {
-    const cv::Size size = fg->grab().size();
+    const cv::Size size = fg->size();
     cout << "grabbing resolution set to " << size.width << "x" << size.height << endl;
   }
 

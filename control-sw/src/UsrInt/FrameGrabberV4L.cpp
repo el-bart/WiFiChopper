@@ -88,6 +88,12 @@ cv::Mat FrameGrabberV4L::grabImpl(void)
 }
 
 
+cv::Size FrameGrabberV4L::sizeImpl(void)
+{
+  return cv::Size( width_, height_ );
+}
+
+
 Util::UniqueDescriptor FrameGrabberV4L::openDevice(void) const
 {
   Util::UniqueDescriptor fd( v4l2_open( devPath_.c_str(), O_RDWR | O_NONBLOCK ) );

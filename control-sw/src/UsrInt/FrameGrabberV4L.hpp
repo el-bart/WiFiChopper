@@ -19,7 +19,8 @@ public:
 private:
   typedef Util::MappedMem<void, v4l2_mmap, v4l2_munmap> MMem;
 
-  virtual cv::Mat grabImpl(void);
+  virtual cv::Mat  grabImpl(void);
+  virtual cv::Size sizeImpl(void);
 
   Util::UniqueDescriptor openDevice(void) const;
   void init(size_t width, size_t height);
