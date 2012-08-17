@@ -1,4 +1,3 @@
-#include <iostream>     
 #include <algorithm>
 #include <cstring>
 #include <cinttypes>
@@ -61,7 +60,7 @@ cv::Mat FrameGrabberV4L::grabImpl(void)
 {
   // check if the device is ready
   // TODO: hardcoded timeout value....
-  if( !Util::timedSelect( dev_.get(), 4.0 ) )
+  if( !Util::timedSelect( dev_.get(), 1.0 ) )
     throw Util::Exception( UTIL_LOCSTRM << "timeout occured while waiting for the image" );
 
   // get buffer from the device
@@ -122,7 +121,6 @@ void FrameGrabberV4L::init(void)
 //#endif
 
   // setup format
-  cerr << "setting up..." << endl;
   v4l2_format fmt;
   zeroMemory(fmt);
   fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -133,16 +131,6 @@ void FrameGrabberV4L::init(void)
   fmt.fmt.pix.field       = V4L2_FIELD_NONE;
   fmt.fmt.pix.colorspace  = V4L2_COLORSPACE_SRGB;
   callIoctl( dev_.get(), VIDIOC_S_FMT, &fmt );
-  // set sizes according to the parameters read
-  cerr << "IMAGE FORMAT NEGOCIATED:" << endl;
-  cerr << "\tsize  = " << fmt.fmt.pix.width << "x" << fmt.fmt.pix.height << endl;
-  cerr << "\tbpl   = " << fmt.fmt.pix.bytesperline << endl;
-  const uint32_t pix    = fmt.fmt.pix.pixelformat;
-  const char     tab[5] = { static_cast<char>((pix>>0)&0xFF), static_cast<char>((pix>>8)&0xFF), static_cast<char>((pix>>16)&0xFF), static_cast<char>((pix>>24)&0xFF), 0 };
-  cerr << "\tpixf  = " << tab << endl;
-  cerr << "\tfield = " << fmt.fmt.pix.field << endl;
-  cerr << "\timgsz = " << fmt.fmt.pix.sizeimage << endl;
-  cerr << "\tcspc  = " << fmt.fmt.pix.colorspace << endl;
   // write down info
   width_        = fmt.fmt.pix.width;
   height_       = fmt.fmt.pix.height;
@@ -151,12 +139,13 @@ void FrameGrabberV4L::init(void)
   // initialize buffers
   v4l2_requestbuffers req;
   zeroMemory(req);
-  req.count  = 3;
+  req.count  = 5;
   req.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   req.memory = V4L2_MEMORY_MMAP;
   callIoctl( dev_.get(), VIDIOC_REQBUFS, &req );
-  if( req.count < 2 )
-    throw Util::Exception( UTIL_LOCSTRM << "requesting bufferes failed: got only " << req.count << " buffers" );
+  const size_t reqBufCnt = 5;
+  if( req.count < reqBufCnt )
+    throw Util::Exception( UTIL_LOCSTRM << "requesting bufferes failed: got only " << req.count << " out of requested " << reqBufCnt << " buffers" );
   buffers_.reserve( req.count );
   // mmap buffers
   for(size_t i = 0; i < req.count; ++i)
