@@ -1,4 +1,4 @@
-#include <iostream>
+#include <iostream>     
 #include <algorithm>
 #include <cstring>
 #include <cinttypes>
@@ -53,6 +53,7 @@ FrameGrabberV4L::FrameGrabberV4L(std::string devPath):
   dev_( openDevice() )
 {
   init();
+  startCapture();
 }
 
 
@@ -64,22 +65,24 @@ cv::Mat FrameGrabberV4L::grabImpl(void)
     throw Util::Exception( UTIL_LOCSTRM << "timeout occured while waiting for the image" );
 
   // get buffer from the device
-  ImageBuffer  img( new uint8_t[imageBufferSize_] );
-  size_t       left = imageBufferSize_;
-  do
-  {
-cerr << ".";                    
-    const ssize_t ret = v4l2_read( dev_.get(), img.get(), left );
-    if( ret == -1 )
-      throw Util::Exception( UTIL_LOCSTRM << "read of " << imageBufferSize_ << " bytes failed: " << strerror(errno) );
-    cerr<<"("<<ret<<")";
-    left -= ret;
-  }
-  while( left > 0 );
-cerr << "ok!" << endl;              
+  v4l2_buffer buf;
+  zeroMemory(buf);
+  buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  buf.memory = V4L2_MEMORY_MMAP;
+  callIoctl( dev_.get(), VIDIOC_DQBUF, &buf );
+
+  // get proper buffer
+  if( buf.index >= buffers_.size() )
+    throw std::logic_error("index returned by ioctl() is out of bound - wtf?!");
+  MMem& mm = buffers_[buf.index];
 
   // convert to RGB
-  cv::Mat tmp = toRGB( std::move(img) );
+  cv::Mat tmp = toRGB(mm);
+
+  // return buffer to the driver
+  // TODO: this place is not exception safe - if toRGB() throws this buffer will never be
+  //       enqueued back to the driver (handle will not be lost however)
+  callIoctl( dev_.get(), VIDIOC_QBUF, &buf );
 
   // return image to the user
   return tmp;
@@ -98,141 +101,106 @@ Util::UniqueDescriptor FrameGrabberV4L::openDevice(void) const
 void FrameGrabberV4L::init(void)
 {
   // check device's capabilities
-  {
-    v4l2_capability cap;
-    callIoctl( dev_.get(), VIDIOC_QUERYCAP, &cap );
-    // is it a video capturing device indeed?
-    if( !( cap.capabilities & V4L2_CAP_VIDEO_CAPTURE ) )
-      throw Util::Exception( UTIL_LOCSTRM << "'" << devPath_ << "' is not a V4Lv2 capture device" );
-    // can we read/write it?
-    if( !( cap.capabilities & V4L2_CAP_READWRITE ) )
-      throw Util::Exception( UTIL_LOCSTRM << "'" << devPath_ << "' is not able to stream data (via read() syscall)" );
-    else
-      cout << "can read()/write()" << endl;
-    // can we mmap it?
-    if( !( cap.capabilities & V4L2_CAP_STREAMING ) )
-      throw Util::Exception( UTIL_LOCSTRM << "'" << devPath_ << "' is not able to stream data (via read() syscall)" );
-    else
-      cout << "can mmap() (i.e. stream)" << endl;
-  }
+  v4l2_capability cap;
+  callIoctl( dev_.get(), VIDIOC_QUERYCAP, &cap );
+  if( !( cap.capabilities & V4L2_CAP_VIDEO_CAPTURE ) )
+    throw Util::Exception( UTIL_LOCSTRM << "'" << devPath_ << "' is not a V4Lv2 capture device" );
+  if( !( cap.capabilities & V4L2_CAP_STREAMING ) )
+    throw Util::Exception( UTIL_LOCSTRM << "'" << devPath_ << "' is not able to stream data (mmap)" );
 
-  // input enumeration and selection
-  {
-    // enumerate over all of the devices
-    int inputCount = 0;
-    for(int index=0; ; ++index)
-    {
-      v4l2_input input;
-      zeroMemory(input);
-      input.index = index;
-      if( callIoctlImpl( __FILE__, __LINE__, dev_.get(), VIDIOC_ENUMINPUT, &input, false ) < 0 )    // is there another input?
-        break;
-      ++inputCount;
-      // output this on the screen
-      cout << "INPUT " << index << ":" << endl;
-      cout << "\tname: " << input.name << endl;
-      cout << "\ttype: ";
-      if( input.type & V4L2_INPUT_TYPE_CAMERA ) cout << "camera ";
-      if( input.type & V4L2_INPUT_TYPE_TUNER  ) cout << "tuner ";
-      cout << endl;
-      cout << "\tstat: ";
-      if( input.status & V4L2_IN_ST_NO_POWER  ) cout << "no_power ";
-      if( input.status & V4L2_IN_ST_NO_SIGNAL ) cout << "no_signal ";
-      if( input.status & V4L2_IN_ST_NO_COLOR  ) cout << "no_color ";
-      cout << endl;
-      cout << "\tstds: " << input.std << endl;
-    }
-
-    // just select the first input in a row
-    int inputNo = 0;
-    cout << "choosing input " << inputNo << endl;
-    callIoctl( dev_.get(), VIDIOC_S_INPUT, &inputNo );
-  }
-
-  // standard enumeration and selection
-  {
-    // enumerate over all of the devices
-    bool        hasStandard   = false;
-    v4l2_std_id standardId    = 0x42;   // ==wtf ;)
-    int         standardCount = 0;
-    for(int index=0; ; ++index)
-    {
-      v4l2_standard standard;
-      zeroMemory(standard);
-      standard.index = index;
-      if( callIoctlImpl( __FILE__, __LINE__, dev_.get(), VIDIOC_ENUMSTD, &standard, false ) < 0 )    // is there another input?
-        break;
-      hasStandard = true;
-      standardId  = standard.id;
-      ++standardCount;
-      // output this on the screen
-      // TODO: if( input.std & standard.id )  to see if it is supported or not
-      cout << "STANDARD " << index << ":" << endl;
-      cout << "\tid:   " << standard.id << endl;
-      cout << "\tname: " << standard.name << endl;
-      cout << "\tfrpr: " << standard.frameperiod.numerator / double(standard.frameperiod.denominator) << endl;
-    }
-
-    if( hasStandard )
-    {
-      // just select the first input in a row
-      cout << "choosing standard " << standardId << endl;
-      callIoctl( dev_.get(), VIDIOC_S_STD, &standardId );
-    }
-    else
-      cout << "no standards found" << endl;
-  }
-
-  // crop, cap and crap... this can fail - doesn't matter. errors will be ignored here
-  {
-    // crop c(r)ap...
-    v4l2_cropcap cropcap;
-    zeroMemory(cropcap);
-    cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    callIoctlImpl( __FILE__, __LINE__, dev_.get(), VIDIOC_CROPCAP, &cropcap, false );    // set
-    // crop setup
-    v4l2_crop crop;
-    crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    crop.c    = cropcap.defrect;                          // default
-    callIoctlImpl( __FILE__, __LINE__, dev_.get(), VIDIOC_S_CROP, &crop, false );        // set
-  }
+//#if 0
+  // crop c(r)ap... - errors are ignored here
+  v4l2_cropcap cropcap;
+  zeroMemory(cropcap);
+  cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  callIoctlImpl( __FILE__, __LINE__, dev_.get(), VIDIOC_CROPCAP, &cropcap, false );    // query
+  // crop setup - errors are ignored here
+  v4l2_crop crop;
+  crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  crop.c    = cropcap.defrect;                          // default
+  callIoctlImpl( __FILE__, __LINE__, dev_.get(), VIDIOC_S_CROP, &crop, false );        // set
+//#endif
 
   // setup format
+  cerr << "setting up..." << endl;
+  v4l2_format fmt;
+  zeroMemory(fmt);
+  fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  fmt.fmt.pix.width       = 1600;                             // autodetect
+  fmt.fmt.pix.height      = 1200;                             // autodetect
+  //fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;              // shitty, but usually works... :/
+  fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
+  fmt.fmt.pix.field       = V4L2_FIELD_NONE;
+  fmt.fmt.pix.colorspace  = V4L2_COLORSPACE_SRGB;
+  callIoctl( dev_.get(), VIDIOC_S_FMT, &fmt );
+  // set sizes according to the parameters read
+  cerr << "IMAGE FORMAT NEGOCIATED:" << endl;
+  cerr << "\tsize  = " << fmt.fmt.pix.width << "x" << fmt.fmt.pix.height << endl;
+  cerr << "\tbpl   = " << fmt.fmt.pix.bytesperline << endl;
+  const uint32_t pix    = fmt.fmt.pix.pixelformat;
+  const char     tab[5] = { static_cast<char>((pix>>0)&0xFF), static_cast<char>((pix>>8)&0xFF), static_cast<char>((pix>>16)&0xFF), static_cast<char>((pix>>24)&0xFF), 0 };
+  cerr << "\tpixf  = " << tab << endl;
+  cerr << "\tfield = " << fmt.fmt.pix.field << endl;
+  cerr << "\timgsz = " << fmt.fmt.pix.sizeimage << endl;
+  cerr << "\tcspc  = " << fmt.fmt.pix.colorspace << endl;
+  // write down info
+  width_        = fmt.fmt.pix.width;
+  height_       = fmt.fmt.pix.height;
+  bytesPerLine_ = fmt.fmt.pix.bytesperline;
+
+  // initialize buffers
+  v4l2_requestbuffers req;
+  zeroMemory(req);
+  req.count  = 3;
+  req.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  req.memory = V4L2_MEMORY_MMAP;
+  callIoctl( dev_.get(), VIDIOC_REQBUFS, &req );
+  if( req.count < 2 )
+    throw Util::Exception( UTIL_LOCSTRM << "requesting bufferes failed: got only " << req.count << " buffers" );
+  buffers_.reserve( req.count );
+  // mmap buffers
+  for(size_t i = 0; i < req.count; ++i)
   {
-    v4l2_format fmt;
-    zeroMemory(fmt);
-    fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;      // :)
-    fmt.fmt.pix.width       = 1200;                             // TODO...
-    fmt.fmt.pix.height      = 1200;                             // TODO...
-    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;               // use RGB color plane
-    fmt.fmt.pix.field       = V4L2_FIELD_NONE;
-    fmt.fmt.pix.colorspace  = V4L2_COLORSPACE_SRGB;
-    callIoctl( dev_.get(), VIDIOC_S_FMT, &fmt );
-    // set sizes according to the parameters read
-    cout << "IMAGE FORMAT NEGOCIATED:" << endl;
-    cout << "\tsize  = " << fmt.fmt.pix.width << "x" << fmt.fmt.pix.height << endl;
-    cout << "\tbpl   = " << fmt.fmt.pix.bytesperline << endl;
-    const uint32_t pix    = fmt.fmt.pix.pixelformat;
-    const char     tab[5] = { static_cast<char>((pix>>0)&0xFF), static_cast<char>((pix>>8)&0xFF), static_cast<char>((pix>>16)&0xFF), static_cast<char>((pix>>24)&0xFF), 0 };
-    cout << "\tpixf  = " << tab << endl;
-    cout << "\tfield = " << fmt.fmt.pix.field << endl;
-    cout << "\timgsz = " << fmt.fmt.pix.sizeimage << endl;
-    cout << "\tcspc  = " << fmt.fmt.pix.colorspace << endl;
-    // write down info
-    width_           = fmt.fmt.pix.width;
-    height_          = fmt.fmt.pix.height;
-    bytesPerLine_    = fmt.fmt.pix.bytesperline;
-    imageBufferSize_ = fmt.fmt.pix.sizeimage;
-    assert( width_ <= bytesPerLine_ && "data line is shorter than image line!" );
+    // request next buffer
+    v4l2_buffer buf;
+    zeroMemory(buf);
+    buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_MMAP;
+    buf.index  = i;
+    callIoctl( dev_.get(), VIDIOC_QUERYBUF, &buf );
+    // mmap buffer
+    MMem mm( buf.length, PROT_READ|PROT_WRITE, MAP_SHARED, dev_.get(), buf.m.offset );
+    // hol buffer locally
+    buffers_.push_back( std::move(mm) );
   }
+
+  assert( buffers_.size() == req.count );
 }
 
 
-cv::Mat FrameGrabberV4L::toRGB(ImageBuffer img) const
+void FrameGrabberV4L::startCapture(void)
+{
+  // add all buffer to the queue of the driver
+  for(size_t i = 0; i < buffers_.size(); ++i)
+  {
+    v4l2_buffer buf;
+    zeroMemory(buf);
+    buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_MMAP;
+    buf.index  = i;
+    callIoctl( dev_.get(), VIDIOC_QBUF, &buf );
+  }
+
+  // do the evolution! :)
+  v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  callIoctl( dev_.get(), VIDIOC_STREAMON, &type );
+}
+
+
+cv::Mat FrameGrabberV4L::toRGB(MMem& mm) const
 {
   const auto size = cv::Size(width_, height_);
-  cv::Mat out( size, CV_8UC3, img.get(), bytesPerLine_ );       // get data buffer
-  img.release();                                                // ownership is passed
+  cv::Mat out( size, CV_8UC3, mm.mem(), bytesPerLine_ );    // copy to output buffer
   return out;
 }
 
