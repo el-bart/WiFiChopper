@@ -14,7 +14,7 @@ namespace UsrInt
 class FrameGrabberV4L: public FrameGrabber
 {
 public:
-  FrameGrabberV4L(std::string devPath);
+  FrameGrabberV4L(std::string devPath, size_t width, size_t height);
 
 private:
   typedef Util::MappedMem<void, v4l2_mmap, v4l2_munmap> MMem;
@@ -22,7 +22,7 @@ private:
   virtual cv::Mat grabImpl(void);
 
   Util::UniqueDescriptor openDevice(void) const;
-  void init(void);
+  void init(size_t width, size_t height);
   void startCapture(void);
   cv::Mat toRGB(MMem& mm) const;
 

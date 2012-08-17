@@ -19,10 +19,16 @@ int main(int argc, char** argv)
 
   cout << "initializing device..." << endl;
   const Util::ClockTimerRT clkInit;
-  UsrInt::FrameGrabberPtr fg( new UsrInt::FrameGrabberV4L(argv[1]) );
+  UsrInt::FrameGrabberPtr fg( new UsrInt::FrameGrabberV4L(argv[1], 800, 600) );
   const std::string winName = "image from grabber";
   cv::namedWindow( winName, CV_WINDOW_AUTOSIZE|CV_WINDOW_KEEPRATIO );
   cout << "device initialized in " << clkInit.elapsed() << " second(s)" << endl;
+
+  // check what is the grabbing resolution
+  {
+    const cv::Size size = fg->grab().size();
+    cout << "grabbing resolution set to " << size.width << "x" << size.height << endl;
+  }
 
   cout << "grabbing frames - press any key to stop" << endl;
   const Util::ClockTimerRT clkFps;

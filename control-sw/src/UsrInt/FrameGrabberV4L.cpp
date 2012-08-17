@@ -47,11 +47,11 @@ void zeroMemory(T& t) { bzero( &t, sizeof(t) ); }
 } // unnamed namespace
 
 
-FrameGrabberV4L::FrameGrabberV4L(std::string devPath):
+FrameGrabberV4L::FrameGrabberV4L(std::string devPath, const size_t width, const size_t height):
   devPath_( std::move(devPath) ),
   dev_( openDevice() )
 {
-  init();
+  init( width, height );
   startCapture();
 }
 
@@ -97,7 +97,7 @@ Util::UniqueDescriptor FrameGrabberV4L::openDevice(void) const
 }
 
 
-void FrameGrabberV4L::init(void)
+void FrameGrabberV4L::init(const size_t width, const size_t height)
 {
   // check device's capabilities
   v4l2_capability cap;
@@ -124,8 +124,8 @@ void FrameGrabberV4L::init(void)
   v4l2_format fmt;
   zeroMemory(fmt);
   fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  fmt.fmt.pix.width       = 1600;                             // autodetect
-  fmt.fmt.pix.height      = 1200;                             // autodetect
+  fmt.fmt.pix.width       = width;                            // driver may change it
+  fmt.fmt.pix.height      = height;                           // ...
   //fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;              // shitty, but usually works... :/
   fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
   fmt.fmt.pix.field       = V4L2_FIELD_NONE;
