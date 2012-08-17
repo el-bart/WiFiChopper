@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <iostream>
 
 #include "UsrInt/FrameGrabberV4L.hpp"
@@ -14,12 +15,19 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  cout << setprecision(3);
+
+  cout << "initializing device..." << endl;
+  const Util::ClockTimerRT clkInit;
   UsrInt::FrameGrabberPtr fg( new UsrInt::FrameGrabberV4L(argv[1]) );
   const std::string winName = "image from grabber";
   cv::namedWindow( winName, CV_WINDOW_AUTOSIZE|CV_WINDOW_KEEPRATIO );
-  const Util::ClockTimerRT clk;
-  size_t i;
-  for(i=0; i<1000; ++i)
+  cout << "device initialized in " << clkInit.elapsed() << " second(s)" << endl;
+
+  cout << "grabbing frames - press any key to stop" << endl;
+  const Util::ClockTimerRT clkFps;
+  size_t                   i;
+  for(i=0; true; ++i)
   {
     cerr << ".";
     cv::Mat frame = fg->grab();
@@ -32,8 +40,9 @@ int main(int argc, char** argv)
       break;
     }
   }
+  const double fpsT = clkFps.elapsed();
   cout << endl;
-  cout << "~" << i/clk.elapsed() << " fps on average" << endl;
+  cout << "processed " << i << " frames in " << fpsT << " second(s) (" << i/clkFps.elapsed() << " fps on average)" << endl;
   cout << "all done! :)" << endl;
 
   return 0;
