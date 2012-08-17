@@ -135,6 +135,8 @@ void FrameGrabberV4L::init(const size_t width, const size_t height)
   width_        = fmt.fmt.pix.width;
   height_       = fmt.fmt.pix.height;
   bytesPerLine_ = fmt.fmt.pix.bytesperline;
+  if( fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_RGB24 )
+    throw Util::Exception( UTIL_LOCSTRM << "libv4l2 was not able to output RGB24 - aborting..." );
 
   // initialize buffers
   v4l2_requestbuffers req;
