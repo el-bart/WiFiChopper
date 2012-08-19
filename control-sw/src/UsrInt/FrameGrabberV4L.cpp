@@ -198,15 +198,8 @@ cv::Mat FrameGrabberV4L::toRGB(void* mem, const size_t length) const
   assert( width_*3 <= bytesPerLine_ );
   const cv::Size size(width_, height_);
   const cv::Mat  tmp( size, CV_8UC3, mem, bytesPerLine_ );  // catch this for easier processing
-  cv::Mat        out = tmp.clone();                         // make local copy, since memory will soon be reused
-  // tranformation from RGB (delivered by driver) to BGR (used internally by OpenCV)
-  for(size_t h=0; h<height_; ++h)
-    for(size_t w=0; w<width_; ++w)
-    {
-      cv::Vec3b& pix = out.at<cv::Vec3b>( cv::Point(w,h) );
-      std::swap( pix[0], pix[2] );
-    }
-  // return final object
+  cv::Mat        out;               // output image
+  cvtColor(tmp, out, CV_RGB2BGR);   // tranformation from RGB (delivered by driver) to BGR (used internally by OpenCV)
   return out;
 }
 
