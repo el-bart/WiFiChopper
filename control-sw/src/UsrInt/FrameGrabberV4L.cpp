@@ -76,7 +76,7 @@ cv::Mat FrameGrabberV4L::grabImpl(void)
   MMem& mm = buffers_[buf.index];
 
   // convert to RGB
-  cv::Mat tmp = toRGB(mm);
+  cv::Mat tmp = toRGB( mm.mem(), buf.length );
 
   // return buffer to the driver
   // TODO: this place is not exception safe - if toRGB() throws this buffer will never be
@@ -113,7 +113,6 @@ void FrameGrabberV4L::init(const size_t width, const size_t height)
   if( !( cap.capabilities & V4L2_CAP_STREAMING ) )
     throw Util::Exception( UTIL_LOCSTRM << "'" << devPath_ << "' is not able to stream data (mmap)" );
 
-//#if 0
   // crop c(r)ap... - errors are ignored here
   v4l2_cropcap cropcap;
   zeroMemory(cropcap);
@@ -124,16 +123,15 @@ void FrameGrabberV4L::init(const size_t width, const size_t height)
   crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   crop.c    = cropcap.defrect;                          // default
   callIoctlImpl( __FILE__, __LINE__, dev_.get(), VIDIOC_S_CROP, &crop, false );        // set
-//#endif
 
   // setup format
+  constexpr auto pixelFormat = V4L2_PIX_FMT_RGB24;
   v4l2_format fmt;
   zeroMemory(fmt);
   fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   fmt.fmt.pix.width       = width;                            // driver may change it
   fmt.fmt.pix.height      = height;                           // ...
-  //fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;              // shitty, but usually works... :/
-  fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
+  fmt.fmt.pix.pixelformat = pixelFormat;
   fmt.fmt.pix.field       = V4L2_FIELD_NONE;
   fmt.fmt.pix.colorspace  = V4L2_COLORSPACE_SRGB;
   callIoctl( dev_.get(), VIDIOC_S_FMT, &fmt );
@@ -141,8 +139,8 @@ void FrameGrabberV4L::init(const size_t width, const size_t height)
   width_        = fmt.fmt.pix.width;
   height_       = fmt.fmt.pix.height;
   bytesPerLine_ = fmt.fmt.pix.bytesperline;
-  if( fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_RGB24 )
-    throw Util::Exception( UTIL_LOCSTRM << "libv4l2 was not able to output RGB24 - aborting..." );
+  if( fmt.fmt.pix.pixelformat != pixelFormat )
+    throw Util::Exception( UTIL_LOCSTRM << "libv4l2 was not able to output in " << pixelFormat << " mode - aborting..." );
 
   // initialize buffers
   v4l2_requestbuffers req;
@@ -194,10 +192,21 @@ void FrameGrabberV4L::startCapture(void)
 }
 
 
-cv::Mat FrameGrabberV4L::toRGB(MMem& mm) const
+cv::Mat FrameGrabberV4L::toRGB(void* mem, const size_t length) const
 {
-  const auto size = cv::Size(width_, height_);
-  cv::Mat out( size, CV_8UC3, mm.mem(), bytesPerLine_ );    // copy to output buffer
+  assert( width_*height_*3 <= length );
+  assert( width_*3 <= bytesPerLine_ );
+  const cv::Size size(width_, height_);
+  const cv::Mat  tmp( size, CV_8UC3, mem, bytesPerLine_ );  // catch this for easier processing
+  cv::Mat        out = tmp.clone();                         // make local copy, since memory will soon be reused
+  // tranformation from RGB (delivered by driver) to BGR (used internally by OpenCV)
+  for(size_t h=0; h<height_; ++h)
+    for(size_t w=0; w<width_; ++w)
+    {
+      cv::Vec3b& pix = out.at<cv::Vec3b>( cv::Point(w,h) );
+      std::swap( pix[0], pix[2] );
+    }
+  // return final object
   return out;
 }
 

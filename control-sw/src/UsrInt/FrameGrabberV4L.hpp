@@ -25,7 +25,7 @@ private:
   Util::UniqueDescriptor openDevice(void) const;
   void init(size_t width, size_t height);
   void startCapture(void);
-  cv::Mat toRGB(MMem& mm) const;
+  cv::Mat toRGB(void* mem, size_t length) const;
 
   std::string            devPath_;
   Util::UniqueDescriptor dev_;
