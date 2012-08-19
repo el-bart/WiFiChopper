@@ -18,7 +18,7 @@ void TextAdder::addLine(cv::Mat& img, const unsigned int lineNo, const std::stri
 {
   IplImage        tmp = img;
   const size_t    w   = img.size().width - wSpace_;
-  const size_t    h   = hSpace_ + lineNo*((fontHeight_*120)/100);
+  const size_t    h   = hSpace_ + lineNo*((fontHeight_*150)/100);
   const cv::Point p(w, h);
   cvPutText( &tmp, txt.c_str(), p, &font_, color_ );
 }
