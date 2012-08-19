@@ -1,3 +1,5 @@
+#include <mutex>
+#include <thread>
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
@@ -13,6 +15,8 @@
 #include "IO/ProtoRTB.hpp"
 #include "Control/Joystick.hpp"
 #include "Control/MotionProcessor.hpp"
+#include "UsrInt/FrameGrabberV4L.hpp"
+#include "UsrInt/Display.hpp"
 
 using namespace std;
 
@@ -49,11 +53,66 @@ void ensureInitialNeutralPosition(const char* progName, Control::Input& input)
 }
 
 
+class DisplayThread
+{
+private:
+  typedef std::unique_lock<std::mutex> Lock;
+
+public:
+  DisplayThread(UsrInt::Display display, volatile bool& quit):
+    quit_( &quit ),
+    display_( std::move(display) ),
+    dispInfo_{ 0, {0,0,0} },
+    th_( [this]
+          {
+            while(true)
+            {
+              try
+              {
+                const auto info = getInfo();
+                this->display_.update(info);
+                if( cv::waitKey(10) == 'q' )
+                  break;
+              }
+              catch(const std::exception& ex)
+              {
+                // TODO: this should display on the screen
+                cerr << "DISPLAY THREAD" << ": display error: " << ex.what() << " - proceeding..." << endl;
+              }
+            }
+            *this->quit_ = true;
+          }
+       )
+  { }
+
+  void update(const UsrInt::Display::Info& info)
+  {
+    Lock lock;
+    dispInfo_ = info;
+  }
+
+  UsrInt::Display::Info getInfo(void) const
+  {
+    Lock lock;
+    return dispInfo_;
+  }
+
+private:
+  volatile bool*        quit_;
+  UsrInt::Display       display_;
+  UsrInt::Display::Info dispInfo_;
+  mutable std::mutex    mutex_;
+  std::thread           th_;
+};
+
+
+
+
 int main(int argc, char **argv)
 {
-  if( argc!=1+2+1+1 )
+  if( argc != 1+2+1+1+1 )
   {
-    cerr << argv[0] << " <host> <port> <key_file> <joystick_dev>" << endl;
+    cerr << argv[0] << " <host> <port> <key_file> <joystick_dev> <video_dev>" << endl;
     return 1;
   }
 
@@ -78,17 +137,27 @@ int main(int argc, char **argv)
     IO::ProtoRTB board( std::move(remote), 4.0 );
     cout << argv[0] << ": connected to: " << board.hello() << endl;
 
+    cout << argv[0] << ": initializing video device..." << endl;
+    UsrInt::FrameGrabberPtr fg( new UsrInt::FrameGrabberV4L(argv[5], 1200, 800) );
+    cout << argv[0] << ": video device initialized to " << fg->size().width << "x" << fg->size().height << " resolution" << endl;
+
+    cout << argv[0] << ": initializing display..." << endl;
+    UsrInt::Display display( std::move(fg), true, true );
+    volatile bool   quit = false;
+    DisplayThread   dispTh( std::move(display), quit );
+
+    cout << argv[0] << ": ready to start!" << endl;
+
     // enable CLP - just in case...
     board.enableCLP();
 
     Util::ClockTimerRT rtClkCLP;
     Util::ClockTimerRT rtClkRead;
-    while(true)
+    while( !quit )
     {
 
       try
       {
-
         // check if there is something new on input
         if( Util::timedSelect( input->rawDescriptor(), 0.1 ) )
         {
@@ -96,7 +165,6 @@ int main(int argc, char **argv)
           const auto mv = input->getMovement();
           const auto th = input->getThrottle();
           const auto es = motion.transform( mv, th );     // translate this to engine speeds
-          //cout << "S: " << es.getMain1() << " " << es.getMain2() << "  / " << es.getRear() << endl;
           board.engineSpeed(es);                          // update new speed settings
         }
 
@@ -106,23 +174,25 @@ int main(int argc, char **argv)
           board.enableCLP();                              // CLP must be enabled all time!
           rtClkCLP.restart();
         }
-        if( rtClkRead.elapsed() > 1.5 )
+        if( rtClkRead.elapsed() > 0.4 )
         {
-          const auto accel = board.accelerometer();       // read accelerometer settings
-          const auto volt  = board.batteryVoltage();      // read battery voltage
-          cout << "batt.=" << volt << "V accel.=(" << accel.x_ << "," << accel.y_ << "," << accel.z_ << ")" << endl;
+          const auto accel   = board.accelerometer();               // read accelerometer settings
+          const auto battery = board.batteryVoltage();              // read battery voltage
+          const UsrInt::Display::Info info = { battery, accel };    // create info object
+          dispTh.update(info);                                      // send info to thread
           rtClkRead.restart();
         }
 
       }
       catch(const std::exception& ex)
       {
+        // TODO: this should display on the screen
         cerr << argv[0] << ": communication error: " << ex.what() << " - proceeding..." << endl;
       }
 
     }
 
-    cout << argv[0] << "exiting..." << endl;
+    cout << argv[0] << ": exiting..." << endl;
     return 0;
   }
   catch(const std::exception& ex)
