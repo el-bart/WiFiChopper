@@ -18,13 +18,15 @@ public:
     IO::ProtoRTB::Accel acceleration_;
   };
 
-  explicit Display(FrameGrabberPtr fg);
+  explicit Display(FrameGrabberPtr fg, bool flipH=false, bool flipV=false);
 
   void update(const Info& info);
 
 private:
   FrameGrabberPtr fg_;
   TextAdder       txt_;
+  bool            flip_;
+  int             flipDir_;
 };
 
 }
