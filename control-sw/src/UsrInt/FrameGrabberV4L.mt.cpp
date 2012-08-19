@@ -35,15 +35,23 @@ int main(int argc, char** argv)
   size_t                   i;
   for(i=0; true; ++i)
   {
-    cerr << ".";
-    cv::Mat frame = fg->grab();
-    // output
-    imshow( winName, frame );
-    if( cv::waitKey(10) >= 0 )
+    try
     {
-      cout << endl;
-      cout << "breaking on user request";
-      break;
+      cv::Mat frame = fg->grab();
+      cerr << ".";
+      // output
+      imshow( winName, frame );
+      if( cv::waitKey(10) >= 0 )
+      {
+        cout << endl;
+        cout << "breaking on user request";
+        break;
+      }
+    }
+    catch(const std::exception& ex)
+    {
+      cerr << 'X' << endl;
+      cerr << ex.what() << endl;
     }
   }
   const double fpsT = clkFps.elapsed();

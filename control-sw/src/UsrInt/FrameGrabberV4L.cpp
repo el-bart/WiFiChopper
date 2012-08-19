@@ -3,6 +3,7 @@
 #include <cinttypes>
 #include <cerrno>
 #include <cassert>
+#include <boost/noncopyable.hpp>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -38,7 +39,8 @@ int callIoctlImpl(const char* file, const unsigned line, int fd, int request, vo
 
 
 // ugly, but reserves file:line info...
-#define callIoctl(fd, req, arg) callIoctlImpl(__FILE__, __LINE__, fd, req, arg)
+#define callIoctl(fd, req, arg)    callIoctlImpl(__FILE__, __LINE__, (fd), (req), (arg))
+#define callIoctlRet(fd, req, arg) callIoctlImpl(__FILE__, __LINE__, (fd), (req), (arg), false)
 
 
 template<typename T>
@@ -56,11 +58,34 @@ FrameGrabberV4L::FrameGrabberV4L(std::string devPath, const size_t width, const 
 }
 
 
+namespace
+{
+
+struct BufferReturner: private boost::noncopyable
+{
+  BufferReturner(const int dev, v4l2_buffer& buf):
+    dev_(dev),
+    buf_(&buf)
+  { }
+  ~BufferReturner(void)
+  {
+    callIoctlRet( dev_, VIDIOC_QBUF, buf_ );        // return buffer to the driver
+    // nothing can be done in case of an error...
+  }
+
+private:
+  int          dev_;
+  v4l2_buffer* buf_;
+};
+
+}
+
+
 cv::Mat FrameGrabberV4L::grabImpl(void)
 {
   // check if the device is ready
   // TODO: hardcoded timeout value....
-  if( !Util::timedSelect( dev_.get(), 1.0 ) )
+  if( !Util::timedSelect( dev_.get(), 0.250 ) )
     throw Util::Exception( UTIL_LOCSTRM << "timeout occured while waiting for the image" );
 
   // get buffer from the device
@@ -69,22 +94,15 @@ cv::Mat FrameGrabberV4L::grabImpl(void)
   buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   buf.memory = V4L2_MEMORY_MMAP;
   callIoctl( dev_.get(), VIDIOC_DQBUF, &buf );
+  const BufferReturner bufRet( dev_.get(), buf );   // ensure automatic returning of the buffer, even in case of an exception
 
   // get proper buffer
   if( buf.index >= buffers_.size() )
     throw std::logic_error("index returned by ioctl() is out of bound - wtf?!");
   MMem& mm = buffers_[buf.index];
 
-  // convert to RGB
-  cv::Mat tmp = toRGB( mm.mem(), buf.length );
-
-  // return buffer to the driver
-  // TODO: this place is not exception safe - if toRGB() throws this buffer will never be
-  //       enqueued back to the driver (handle will not be lost however)
-  callIoctl( dev_.get(), VIDIOC_QBUF, &buf );
-
-  // return image to the user
-  return tmp;
+  // convert received image to OpenCV's format
+  return toRGB( mm.mem(), buf.length );
 }
 
 
@@ -117,20 +135,20 @@ void FrameGrabberV4L::init(const size_t width, const size_t height)
   v4l2_cropcap cropcap;
   zeroMemory(cropcap);
   cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  callIoctlImpl( __FILE__, __LINE__, dev_.get(), VIDIOC_CROPCAP, &cropcap, false );    // query
+  callIoctlRet( dev_.get(), VIDIOC_CROPCAP, &cropcap );     // query
   // crop setup - errors are ignored here
   v4l2_crop crop;
   crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  crop.c    = cropcap.defrect;                          // default
-  callIoctlImpl( __FILE__, __LINE__, dev_.get(), VIDIOC_S_CROP, &crop, false );        // set
+  crop.c    = cropcap.defrect;                              // default
+  callIoctlRet( dev_.get(), VIDIOC_S_CROP, &crop );         // set
 
   // setup format
   constexpr auto pixelFormat = V4L2_PIX_FMT_RGB24;
   v4l2_format fmt;
   zeroMemory(fmt);
   fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  fmt.fmt.pix.width       = width;                            // driver may change it
-  fmt.fmt.pix.height      = height;                           // ...
+  fmt.fmt.pix.width       = width;                          // driver may change it
+  fmt.fmt.pix.height      = height;                         // ...
   fmt.fmt.pix.pixelformat = pixelFormat;
   fmt.fmt.pix.field       = V4L2_FIELD_NONE;
   fmt.fmt.pix.colorspace  = V4L2_COLORSPACE_SRGB;
@@ -145,11 +163,11 @@ void FrameGrabberV4L::init(const size_t width, const size_t height)
   // initialize buffers
   v4l2_requestbuffers req;
   zeroMemory(req);
-  req.count  = 5;
+  constexpr size_t reqBufCnt = 5;
+  req.count  = reqBufCnt;
   req.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   req.memory = V4L2_MEMORY_MMAP;
   callIoctl( dev_.get(), VIDIOC_REQBUFS, &req );
-  const size_t reqBufCnt = 5;
   if( req.count < reqBufCnt )
     throw Util::Exception( UTIL_LOCSTRM << "requesting bufferes failed: got only " << req.count << " out of requested " << reqBufCnt << " buffers" );
   buffers_.reserve( req.count );
