@@ -81,11 +81,10 @@ private:
 }
 
 
-cv::Mat FrameGrabberV4L::grabImpl(void)
+cv::Mat FrameGrabberV4L::grabImpl(const double timeout)
 {
   // check if the device is ready
-  // TODO: hardcoded timeout value....
-  if( !Util::timedSelect( dev_.get(), 0.250 ) )
+  if( !Util::timedSelect( dev_.get(), timeout ) )
     throw Util::Exception( UTIL_LOCSTRM << "timeout occured while waiting for the image" );
 
   // get buffer from the device

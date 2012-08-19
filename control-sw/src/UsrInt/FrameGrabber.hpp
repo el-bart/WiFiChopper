@@ -20,11 +20,11 @@ public:
   FrameGrabber(const FrameGrabber&) = delete;
   FrameGrabber& operator=(const FrameGrabber&) = delete;
 
-  cv::Mat  grab(void) { return grabImpl(); }
+  cv::Mat  grab(const double timeout = 0.250) { return grabImpl(timeout); }
   cv::Size size(void) { return sizeImpl(); }
 
 private:
-  virtual cv::Mat  grabImpl(void) = 0;
+  virtual cv::Mat  grabImpl(double timeout) = 0;
   virtual cv::Size sizeImpl(void) = 0;
 };
 
