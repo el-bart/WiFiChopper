@@ -3,7 +3,6 @@
 
 #include <string>
 #include <memory>
-#include <boost/noncopyable.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 #include "Util/ClockTimer.hpp"
@@ -13,11 +12,21 @@
 namespace UsrInt
 {
 
-class VideoWriter: private boost::noncopyable
+class VideoWriter
 {
 public:
   VideoWriter(std::string outFile, double fps);
   VideoWriter(std::string outFile, FrameGrabber& fg);
+  // NOTE: explicit mv-c-tor is required since OpenCV's members have copy c-tors, by do not have
+  //       mv-c-tors, thus making them disabled by default, thus blocking movability of this object.
+  VideoWriter(VideoWriter&& other):
+    outFile_( std::move(other.outFile_) ),
+    fps_(other.fps_),
+    size_(other.size_),
+    vw_( std::move(other.vw_) ),
+    fpsClk_(other.fpsClk_),
+    frames_(other.frames_)
+  { }
 
   void writeFrame(const cv::Mat& img);
 

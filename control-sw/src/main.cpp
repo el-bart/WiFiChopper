@@ -1,5 +1,6 @@
 #include <mutex>
 #include <thread>
+#include <atomic>
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
@@ -20,6 +21,9 @@
 
 using namespace std;
 
+
+namespace
+{
 
 void ensureInitialNeutralPosition(const char* progName, Control::Input& input)
 {
@@ -59,20 +63,20 @@ private:
   typedef std::unique_lock<std::mutex> Lock;
 
 public:
-  DisplayThread(UsrInt::Display display, volatile bool& quit):
+  DisplayThread(UsrInt::Display display, std::atomic<bool>& quit):
     quit_( &quit ),
     display_( std::move(display) ),
     dispInfo_{ 0, {0,0,0} },
     th_( [this]
           {
-            while(true)
+            while(!*this->quit_)
             {
               try
               {
                 const auto info = getInfo();
                 this->display_.update(info);
                 if( cv::waitKey(10) == 'q' )
-                  break;
+                  *this->quit_ = true;
               }
               catch(const std::exception& ex)
               {
@@ -80,10 +84,16 @@ public:
                 cerr << "DISPLAY THREAD" << ": display error: " << ex.what() << " - proceeding..." << endl;
               }
             }
-            *this->quit_ = true;
           }
        )
   { }
+
+  ~DisplayThread(void)
+  {
+    *quit_=true;    // interrupt thread
+    th_.join();     // wait for it to join
+  }
+
 
   void update(const UsrInt::Display::Info& info)
   {
@@ -98,13 +108,14 @@ public:
   }
 
 private:
-  volatile bool*        quit_;
+  std::atomic<bool>*    quit_;
   UsrInt::Display       display_;
   UsrInt::Display::Info dispInfo_;
   mutable std::mutex    mutex_;
   std::thread           th_;
 };
 
+} // unnamed namespace
 
 
 
@@ -142,9 +153,10 @@ int main(int argc, char **argv)
     cout << argv[0] << ": video device initialized to " << fg->size().width << "x" << fg->size().height << " resolution" << endl;
 
     cout << argv[0] << ": initializing display..." << endl;
-    UsrInt::Display display( std::move(fg), true, true );
-    volatile bool   quit = false;
-    DisplayThread   dispTh( std::move(display), quit );
+    UsrInt::Display   display( std::move(fg), true, true );
+    cout << argv[0] << ": writing flight recond movie to '" << display.outputFile() << "' file" << endl;
+    std::atomic<bool> quit(false);
+    DisplayThread     dispTh( std::move(display), quit );
 
     cout << argv[0] << ": ready to start!" << endl;
 
