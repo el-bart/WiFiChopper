@@ -162,7 +162,7 @@ $(TEST_PROGRAM_NAME): $(CXXTESTOBJS) $(CTESTOBJS) $(CXXOBJS_NOMAIN) $(COBJS_NOMA
 
 $(PROGRAM_NAME): $(CXXOBJS) $(COBJS)
 	echo "LD  $@"
-	$(CXX) $(LDFLAGS) -o $@ $^
+	$(CXX) -o $@ $^ $(LDFLAGS)
 
 # C++ source files:
 %.o: %.cpp $(SRCDIR)/Makefile
