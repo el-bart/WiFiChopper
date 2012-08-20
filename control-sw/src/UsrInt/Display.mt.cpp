@@ -19,6 +19,7 @@ int main(int argc, char** argv)
   UsrInt::FrameGrabberPtr fg( new UsrInt::FrameGrabberV4L(argv[1], 800, 600) );
   UsrInt::Display         disp( std::move(fg), false, false );
 
+  cout << "output file is '" << disp.outputFile() << "'" << endl;
   cout << "grabbing frames - press any key to stop" << endl;
   size_t i;
   for(i=0; true; ++i)

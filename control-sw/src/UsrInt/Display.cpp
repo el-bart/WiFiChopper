@@ -1,6 +1,10 @@
+#include <string>
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
+#include <ctime>
+#include <cerrno>
+#include <cstring>
 
 #include "UsrInt/Display.hpp"
 
@@ -20,11 +24,33 @@ int makeFlipDir(bool fh, bool fv)
     return 1;
   return 0x42;  // doesn't matter ;)
 }
+
+
+std::string prepareUniqueMovieName(void)
+{
+  // get current time
+  const time_t tt = time(nullptr);
+  struct tm    bt;
+  if( gmtime_r(&tt, &bt) != &bt )
+    throw Util::Exception( UTIL_LOCSTRM << "gmtime_r() failed to decomose time: " << strerror(errno) );
+  // create filename
+  std::stringstream ss;
+#define PAD_ZERO std::setfill('0') << std::setw(2)
+  ss << "flight_record_"                                                                        // common begin
+     << 1900+bt.tm_year << "-" << PAD_ZERO << 1+bt.tm_mon << "-" << PAD_ZERO << bt.tm_mday      // date
+     << "_"                                                                                     // separator
+     << PAD_ZERO << bt.tm_hour << ":" << PAD_ZERO << bt.tm_min << ":" << PAD_ZERO << bt.tm_sec  // time
+     << ".avi";                                                                                 // extension
+#undef PAD_ZERO
+  // return file name
+  return ss.str();
+}
 } // unnamed namespace
 
 
 Display::Display(FrameGrabberPtr fg, bool flipH, bool flipV):
   fg_( std::move(fg) ),
+  vw_( prepareUniqueMovieName(), *fg_ ),
   txt_( 250, 30, CV_RGB(0,255,0), 1.3 ),
   flip_( flipH || flipV ),
   flipDir_( makeFlipDir(flipH, flipV) )
@@ -70,7 +96,9 @@ void Display::update(const Info& info)
 
   // display new frame
   imshow( "WiFiChopper", frame );
-}
 
+  // write it to the file
+  vw_.writeFrame(frame);
+}
 
 }
