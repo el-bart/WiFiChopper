@@ -9,3 +9,4 @@ gen
 core
 *.o
 uChaos.tar.gz
+control-sw/src/flight_record_*.avi
