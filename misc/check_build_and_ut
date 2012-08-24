@@ -25,7 +25,7 @@ function build_dir()
       if [ "$p" == "test" ]
       then
         echo "RUNNING UNIT TEST APPLICATION"
-        ./gen/$p/*.t
+        ./gen/gcc/$p/*.t
       fi
       # if profile is mtests, inform user about running them
       if [ "$p" == "mtest" ]

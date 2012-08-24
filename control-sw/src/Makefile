@@ -9,7 +9,7 @@
 # ensure temporary files remain
 .SECONDARY:
 
-ifeq (,$(filter %/gen/$(TARGET),$(basename $(CURDIR))))
+ifeq (,$(filter %/gen/$(TC)/$(TARGET),$(basename $(CURDIR))))
 #
 # main part, run in sources dir
 #
@@ -21,13 +21,9 @@ endif
 
 define run-in-gen
 	@echo
-	@echo "##### build $@"
-	mkdir -p "$(GENDIR)/$@" \
-	          `find . -follow -type d | grep -v './\.' | \
-	          grep -v '^\./gen/' | grep -v '^\./gen$$' | \
-			  grep -v '^\.$$' | sed 's:^\./:$(GENDIR)/$@/:'`
-	+$(MAKE) $(MFLAGS) -C "$(GENDIR)/$@" -f "$(CURDIR)/Makefile" \
-		TARGET=$@ $(TARGET)
+	@echo "##### build $(TC)/$@"
+	mkdir -p "$(GENDIR)/$@" `find * -follow -type d | grep -v -e '^gen/' -e '^gen$$' | sed 's:^:$(GENDIR)/$@/:'`
+	+$(MAKE) $(MFLAGS) -C "$(GENDIR)/$@" -f "$(CURDIR)/Makefile" TARGET=$@ $(TARGET)
 endef
 
 .SUFFIXES:
@@ -35,7 +31,7 @@ endef
 # use user-provided configuration
 include config.mk
 
-GENDIR:=$(CURDIR)/gen
+GENDIR:=$(CURDIR)/gen/$(TC)
 SRCDIR:=$(CURDIR)
 VPATH+=$(SRCDIR)
 export GENDIR SRCDIR VPATH
@@ -70,15 +66,22 @@ export LDFLAGS
 
 export TARGET
 
-TEST_PROGRAM_NAME=$(PROGRAM_NAME).t
-export TEST_PROGRAM_NAME
+ifeq ($(TC),avr)
+export HEX_FILE:=$(PROGRAM_NAME).hex
+export BIN_FILE:=$(PROGRAM_NAME).bin
+endif
+export TEST_PROGRAM_NAME:=$(PROGRAM_NAME).t
 
 .PHONY: all
-all: release
+all: $(DEFAULT_TARGET)
 
 .PHONY: debug
 debug: CFLAGS+=-g3
 debug: CXXFLAGS+=-g3
+ifeq ($(TC),avr)
+debug: CFLAGS+=-O3 -Os
+debug: CXXFLAGS+=-O3 -Os
+endif
 debug: TARGET:=all
 debug:
 	@$(run-in-gen)
@@ -112,11 +115,22 @@ mtest: TARGET:=mtest
 mtest:
 	@$(run-in-gen)
 
+ifeq ($(TC),avr)
+.PHONY: flash_mcu
+flash_mcu:
+	@[ -n "$(PROFILE)" ] || { echo "profile MUST be set" ; exit 1 ; }
+	@[ -f "$(GENDIR)/$(PROFILE)/$(BIN_FILE)" ] || { echo "file to flash must exist" ; exit 2 ; }
+	# flash program
+	avrdude -P avrdoper -c stk500v2 -p "$(MCU_PROG_TYPE)" -U "flash:w:$(GENDIR)/$(PROFILE)/$(BIN_FILE)"
+	# setup fuse bits
+	avrdude -P avrdoper -c stk500v2 -p "$(MCU_PROG_TYPE)" -U "lfuse:w:$(LFUSE):m" -U "hfuse:w:$(HFUSE):m"
+endif
+
 .PHONY: clean
 clean:
 	@echo
 	@echo "##### clean"
-	rm -rvf "$(GENDIR)"
+	rm -rvf "gen"
 
 else
 #
@@ -139,12 +153,15 @@ CMTESTOUTS  +=$(CMTESTSRCS:.c=.out)
 CXXMTESTOUTS+=$(CXXMTESTSRCS:.cpp=.out)
 
 # dep files:
-CDEPS  +=$(CSRCS:.c=.d)     $(CTESTSRCS:.c=.d)
-CXXDEPS+=$(CXXSRCS:.cpp=.d) $(CXXTESTSRCS:.cpp=.d)
+CDEPS  +=$(CSRCS:.c=.d)     $(CTESTSRCS:.c=.d)     $(CMTESTSRCS:.c=.d)
+CXXDEPS+=$(CXXSRCS:.cpp=.d) $(CXXTESTSRCS:.cpp=.d) $(CXXMTESTSRCS:.cpp=.d)
 
 
 .PHONY: all
 all: $(PROGRAM_NAME)
+ifeq ($(TC),avr)
+all: $(HEX_FILE) $(BIN_FILE)
+endif
 
 .PHONY: test
 test: $(TEST_PROGRAM_NAME)
@@ -154,15 +171,15 @@ mtest: $(CMTESTOUTS) $(CXXMTESTOUTS)
 
 $(TEST_PROGRAM_NAME): $(CXXTESTOBJS) $(CTESTOBJS) $(CXXOBJS_NOMAIN) $(COBJS_NOMAIN)
 	echo "LD  $@"
-	$(CXX) $(LDFLAGS) -o $@ $^
+	$(LD) -o $@ $^ $(LDFLAGS)
 
 %.out: $(CXXOBJS_NOMAIN) $(COBJS_NOMAIN) %.o
 	echo "LD  $@"
-	$(CXX) $(LDFLAGS) -o $@ $^
+	$(LD) -o $@ $^ $(LDFLAGS)
 
 $(PROGRAM_NAME): $(CXXOBJS) $(COBJS)
 	echo "LD  $@"
-	$(CXX) -o $@ $^ $(LDFLAGS)
+	$(LD) -o $@ $^ $(LDFLAGS)
 
 # C++ source files:
 %.o: %.cpp $(SRCDIR)/Makefile
@@ -174,11 +191,31 @@ $(PROGRAM_NAME): $(CXXOBJS) $(COBJS)
 	echo "CC  $*.c"
 	$(CC) $(CFLAGS) -MD -c "$(SRCDIR)/$*.c" -o "$@"
 
+# enable binary/hex for AVR
+ifeq ($(TC),avr)
+$(HEX_FILE): $(PROGRAM_NAME)
+	echo "HEX $<"
+	$(OBJCOPY) -O ihex $< $@
+
+$(BIN_FILE): $(PROGRAM_NAME)
+	echo "BIN $<"
+	$(OBJCOPY) -O binary $< $@
+endif
+
 
 # makefile depends on its include
 $(SRCDIR)/Makefile: $(SRCDIR)/config.mk
 	touch "$@"
 
+# ignore missing dependency headers (required when header is deleted/renamed)
+%.h: FORCE
+	@true
+%.hpp: FORCE
+	@true
+
+# forces rebuilding, if needed
+.PHONY: FORCE
+FORCE:
 
 # has C sources?
 -include $(CDEPS)
