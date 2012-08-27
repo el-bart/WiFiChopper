@@ -37,16 +37,18 @@ int main(int argc, char** argv)
   {
     try
     {
-      cv::Mat frame = fg->grab();
-      cerr << ".";
-      // output
-      imshow( winName, frame );
+      // check if stop was requested
       if( cv::waitKey(10) >= 0 )
       {
         cout << endl;
         cout << "breaking on user request";
         break;
       }
+      // capture
+      cv::Mat frame = fg->grab();
+      cerr << ".";
+      // output
+      imshow( winName, frame );
     }
     catch(const std::exception& ex)
     {
