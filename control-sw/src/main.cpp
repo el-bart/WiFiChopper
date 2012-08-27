@@ -139,7 +139,7 @@ int main(int argc, char **argv)
     Control::InputPtr input( new Control::Joystick( argv[4], { true, {1,true}, {0,false}, true, {3,true} } ) );
     cout << argv[0] << ": connect to the device: " << input->name() << endl;
     ensureInitialNeutralPosition( argv[0], *input );
-    const Control::MotionProcessor motion( 100/255.0, + 15/255.0 );
+    const Control::MotionProcessor motion( 30/255.0, + 7/255.0 );   // TODO: hardcoded values - should be in the config file
 
     cout << argv[0] << ": connecting to the server..." << endl;
     IO::LineCommPtr remote = builder->build();
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
     cout << argv[0] << ": connected to: " << board.hello() << endl;
 
     cout << argv[0] << ": initializing video device..." << endl;
-    UsrInt::FrameGrabberPtr fg( new UsrInt::FrameGrabberV4L(argv[5], 1200, 800) );
+    UsrInt::FrameGrabberPtr fg( new UsrInt::FrameGrabberV4L(argv[5], 1200, 800) );  // TODO: move resolution to a config file
     cout << argv[0] << ": video device initialized to " << fg->size().width << "x" << fg->size().height << " resolution" << endl;
 
     cout << argv[0] << ": initializing display..." << endl;
