@@ -30,21 +30,31 @@ int main(int argc, char** argv)
     cout << "grabbing resolution set to " << size.width << "x" << size.height << endl;
   }
 
+  // some setting - tell which elements are to be used at all
+  constexpr bool controlExposure     = false;
+  constexpr bool controlWhiteBalance = false;
+
   // setting up exposure time
-  if(0)
+  if(controlExposure)
   {
-    const std::chrono::microseconds expTime = std::chrono::milliseconds(50);
-    cout << "setting exposure time to " << expTime.count() << "[us]" << endl;
-    fg->setExposureTime(expTime);
-  }
-  else
-  {
-    cout << "setting automatic exposure time" << endl;
-    fg->setAutoExposureTime();
+    if(0)
+    {
+      const std::chrono::microseconds expTime = std::chrono::milliseconds(50);
+      cout << "setting exposure time to " << expTime.count() << "[us]" << endl;
+      fg->setExposureTime(expTime);
+    }
+    else
+    {
+      cout << "setting automatic exposure time" << endl;
+      fg->setAutoExposureTime();
+    }
   }
 
-  // enable it for now
-  fg->autoWhiteBalance(true);
+  if(controlWhiteBalance)
+  {
+    // enable it for now
+    fg->autoWhiteBalance(true);
+  }
 
   // main loop
   cout << "grabbing frames - press any key to stop" << endl;
@@ -63,13 +73,15 @@ int main(int argc, char** argv)
         cout << "breaking on user request";
         break;
       }
-      // after 2 seconds disable automatic white balance
-      if( !whiteBalanceDisabled && clkRunning.elapsed() >= 2.0 )
+      if(controlWhiteBalance)
       {
-
-        cout << endl << "disabling automatic white balance now" << endl;
-        fg->autoWhiteBalance(false);
-        whiteBalanceDisabled = true;
+        // after 2 seconds disable automatic white balance
+        if( !whiteBalanceDisabled && clkRunning.elapsed() >= 2.0 )
+        {
+          cout << endl << "disabling automatic white balance now" << endl;
+          fg->autoWhiteBalance(false);
+          whiteBalanceDisabled = true;
+        }
       }
       // capture
       cv::Mat frame = fg->grab();
