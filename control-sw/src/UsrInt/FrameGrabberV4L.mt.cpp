@@ -30,8 +30,27 @@ int main(int argc, char** argv)
     cout << "grabbing resolution set to " << size.width << "x" << size.height << endl;
   }
 
+  // setting up exposure time
+  if(0)
+  {
+    const std::chrono::microseconds expTime = std::chrono::milliseconds(50);
+    cout << "setting exposure time to " << expTime.count() << "[us]" << endl;
+    fg->setExposureTime(expTime);
+  }
+  else
+  {
+    cout << "setting automatic exposure time" << endl;
+    fg->setAutoExposureTime();
+  }
+
+  // enable it for now
+  fg->autoWhiteBalance(true);
+
+  // main loop
   cout << "grabbing frames - press any key to stop" << endl;
   const Util::ClockTimerRT clkFps;
+  const Util::ClockTimerRT clkRunning;
+  bool                     whiteBalanceDisabled = false;
   size_t                   i;
   for(i=0; true; ++i)
   {
@@ -43,6 +62,14 @@ int main(int argc, char** argv)
         cout << endl;
         cout << "breaking on user request";
         break;
+      }
+      // after 2 seconds disable automatic white balance
+      if( !whiteBalanceDisabled && clkRunning.elapsed() >= 2.0 )
+      {
+
+        cout << endl << "disabling automatic white balance now" << endl;
+        fg->autoWhiteBalance(false);
+        whiteBalanceDisabled = true;
       }
       // capture
       cv::Mat frame = fg->grab();
@@ -56,6 +83,8 @@ int main(int argc, char** argv)
       cerr << ex.what() << endl;
     }
   }
+
+  // summary
   const double fpsT = clkFps.elapsed();
   cout << endl;
   cout << "processed " << i << " frames in " << fpsT << " second(s) (" << i/clkFps.elapsed() << " fps on average)" << endl;

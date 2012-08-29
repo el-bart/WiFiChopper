@@ -21,6 +21,9 @@ private:
 
   virtual cv::Mat  grabImpl(double timeout);
   virtual cv::Size sizeImpl(void);
+  virtual void setExposureTimeImpl(const std::chrono::microseconds us);
+  virtual void setAutoExposureTimeImpl(void);
+  virtual void autoWhiteBalanceImpl(const bool set);
 
   Util::UniqueDescriptor openDevice(void) const;
   void init(size_t width, size_t height);

@@ -1,3 +1,4 @@
+#include <iostream>
 #include <algorithm>
 #include <cstring>
 #include <cinttypes>
@@ -111,6 +112,54 @@ cv::Size FrameGrabberV4L::sizeImpl(void)
 }
 
 
+void FrameGrabberV4L::setExposureTimeImpl(const std::chrono::microseconds us)
+{
+  struct v4l2_control control;
+
+  // set manual control
+  zeroMemory(control);
+  control.id    = V4L2_CID_EXPOSURE_AUTO;
+  control.value = V4L2_EXPOSURE_MANUAL;
+  callIoctl( dev_.get(), VIDIOC_S_CTRL, &control );
+
+  // set value
+  zeroMemory(control);
+  control.id    = V4L2_CID_EXPOSURE_ABSOLUTE;
+  control.value = us.count()/100;
+  callIoctl( dev_.get(), VIDIOC_S_CTRL, &control );
+}
+
+
+void FrameGrabberV4L::setAutoExposureTimeImpl(void)
+{
+  struct v4l2_control control;
+  // set automatic control
+  zeroMemory(control);
+  control.id = V4L2_CID_EXPOSURE_AUTO;
+  // check whatever is supported
+  const decltype(control.value) options[] = { V4L2_EXPOSURE_AUTO, V4L2_EXPOSURE_SHUTTER_PRIORITY, V4L2_EXPOSURE_APERTURE_PRIORITY };
+  for(auto value: options)
+  {
+    control.value = value;
+    if( callIoctlRet( dev_.get(), VIDIOC_S_CTRL, &control) == 0 )
+      return;
+  }
+  // or throw, in case of none...
+  control.value = V4L2_EXPOSURE_AUTO;
+  callIoctl( dev_.get(), VIDIOC_S_CTRL, &control );
+}
+
+
+void FrameGrabberV4L::autoWhiteBalanceImpl(const bool set)
+{
+  struct v4l2_control control;
+  zeroMemory(control);
+  control.id    = V4L2_CID_AUTO_WHITE_BALANCE;
+  control.value = set?1:0;
+  callIoctl( dev_.get(), VIDIOC_S_CTRL, &control );
+}
+
+
 Util::UniqueDescriptor FrameGrabberV4L::openDevice(void) const
 {
   Util::UniqueDescriptor fd( v4l2_open( devPath_.c_str(), O_RDWR | O_NONBLOCK ) );
@@ -122,6 +171,8 @@ Util::UniqueDescriptor FrameGrabberV4L::openDevice(void) const
 
 void FrameGrabberV4L::init(const size_t width, const size_t height)
 {
+  // TODO: split this into separate methods for better readbility
+
   // check device's capabilities
   v4l2_capability cap;
   callIoctl( dev_.get(), VIDIOC_QUERYCAP, &cap );
