@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
+#include <typeinfo>
 #include <stdexcept>
 #include <unistd.h>
 
@@ -199,7 +200,7 @@ int main(int argc, char **argv)
       catch(const std::exception& ex)
       {
         // TODO: this should display on the screen
-        cerr << argv[0] << ": communication error: " << ex.what() << " - proceeding..." << endl;
+        cerr << argv[0] << ": communication error (" << typeid(ex).name() << "): " << ex.what() << " - proceeding..." << endl;
       }
 
     }
@@ -209,7 +210,7 @@ int main(int argc, char **argv)
   }
   catch(const std::exception& ex)
   {
-    cerr << argv[0] << ": fatal error: " << ex.what() << endl;
+    cerr << argv[0] << ": fatal error (" << typeid(ex).name() << "): " << ex.what() << endl;
     return 42;
   }
 
