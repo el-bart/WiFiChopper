@@ -30,7 +30,7 @@ motherboard:
 .PHONY: motherboard-package
 motherboard-package: uChaos.tar.gz
 
-uChaos.tar.gz: $(shell find motherboard/uChaos -type f -follow | grep -v /gen/)
+uChaos.tar.gz: $(shell find motherboard/uChaos -type f -follow | grep -v /gen/) | motherboard
 	tar czvhf uChaos.tar.gz -C motherboard --exclude=gen uChaos
 
 .PHONY: clean

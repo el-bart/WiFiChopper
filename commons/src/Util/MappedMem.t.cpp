@@ -77,7 +77,7 @@ void testObj::test<4>(void)
   ensure("cannot open test file", fd.get() != -1 );
   MappedMem<char> mm(10, PROT_READ|PROT_WRITE, MAP_PRIVATE, fd.get(), 0);
   // test mv-assignment
-  UniqueDescriptor tmpFd( open("/etc/inittab", O_RDONLY) );
+  UniqueDescriptor tmpFd( open("/etc/motd", O_RDONLY) );
   ensure("cannot open test file", tmpFd.get() != -1 );
   MappedMem<char> tmp(10, PROT_READ|PROT_WRITE, MAP_PRIVATE, tmpFd.get(), 0);
   tmp = std::move(mm);
