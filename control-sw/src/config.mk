@@ -38,7 +38,7 @@ LIBAV_LIBS :=$(shell pkg-config libavutil --libs)
 # extra flags, if needed
 export CFLAGS  +=
 export CXXFLAGS+=-std=c++11 $(LIBAV_FLAGS)
-export LDFLAGS +=-lopencv_highgui -lopencv_core -lopencv_imgproc -lmcrypt $(LIBAV_LIBS) -lrt
+export LDFLAGS +=-lopencv_highgui -lopencv_core -lopencv_imgproc -lv4l2 -lmcrypt $(LIBAV_LIBS) -lpthread -lrt
 
 # default target
 export DEFAULT_TARGET:=release
