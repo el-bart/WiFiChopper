@@ -1,6 +1,8 @@
 WiFiChopper
 ===========
 
+ABANDONED DUE TO LACK OF TIME...
+
 rework of cheap "Shuanga Ma 9101 DoubleHorse" RC helicopter. it has place camera and is
 PC-controlled with joystick. power supply is changed as well.
 
